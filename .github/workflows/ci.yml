@@ -13,6 +13,7 @@ jobs:
       - uses: actions/setup-python@v5      # 2. installer Python
         with:
           python-version: "3.12"           #    mets la même version que dans ton pyproject.toml
+      - run: echo "Python version: ${{ env.PYTHON_VERSION }}"
       # - run: pipx install poetry           # 3. installer Poetry (pas présent par défaut)
       # - run: poetry install                # 4. installer tes dépendances (ruff, pytest)
       # - run: poetry run ruff check .       # 5. LA vérification : le lint
