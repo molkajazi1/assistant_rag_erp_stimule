@@ -15,4 +15,4 @@ jobs:
           python-version: "^3.11"          #    mets la même version que dans ton pyproject.toml
       - run: pipx install poetry           # 3. installer Poetry (pas présent par défaut)
       - run: poetry install                # 4. installer tes dépendances (ruff, pytest)
-      # - run: poetry run ruff check .       # 5. LA vérification : le lint
+      - run: poetry run ruff check .       # 5. LA vérification : le lint
