@@ -1,0 +1,18 @@
+name: CI                          # nom affiché dans l'onglet Actions
+
+on:                               # TRIGGERS : quand lancer le workflow
+  push:                           # à chaque push
+  # pull_request:                   # à chaque PR
+  # workflow_dispatch:              # bouton "Run workflow" manuel (étape 5 du kata)
+
+jobs:
+  lint:                           # JOB : nom libre
+    runs-on: ubuntu-latest        # RUNNER : machine Linux de GitHub
+    steps:
+      - uses: actions/checkout@v4          # 1. télécharger ton code (sinon le runner est vide)
+      - uses: actions/setup-python@v5      # 2. installer Python
+        with:
+          python-version: "^3.11"          #    mets la même version que dans ton pyproject.toml
+      - run: pipx install poetry           # 3. installer Poetry (pas présent par défaut)
+      - run: poetry install                # 4. installer tes dépendances (ruff, pytest)
+      - run: poetry run ruff check .       # 5. LA vérification : le lint
