@@ -74,6 +74,84 @@ def record_level_chunk(records: list[Record]) -> list[Chunk]:
     ]
 
 
+def hierarchical_chunk(records: list[Record]) -> list[Chunk]:
+    """Header/summary chunk per order plus separate, enriched line-item
+    chunks, linked back to their parent order both in text and in
+    source_ids. Only orders get this treatment - they are the one entity
+    with "many line items" this strategy exists for. Everything else
+    (customer, product, invoice) renders exactly like record_level_chunk,
+    since there's no hierarchy to represent for those.
+    """
+    customers = {r.id: r for r in records if isinstance(r, Customer)}
+    products = {r.id: r for r in records if isinstance(r, Product)}
+    line_items_by_order: dict[str, list[OrderLineItem]] = {}
+    for record in records:
+        if isinstance(record, OrderLineItem):
+            line_items_by_order.setdefault(record.order_id, []).append(record)
+
+    consumed_line_item_ids: set[str] = set()
+    chunks: list[Chunk] = []
+
+    for record in records:
+        if isinstance(record, OrderLineItem):
+            continue  # handled alongside its parent order below, or as a fallback after this loop
+
+        if isinstance(record, Order):
+            header_text = _render_record(record, customers, products)
+            children = line_items_by_order.get(record.id, [])
+            if children:
+                child_ids = ", ".join(item.id for item in children)
+                header_text += f" Has {len(children)} line item(s): {child_ids}."
+            chunks.append(Chunk(text=header_text, source_ids=[record.id], strategy="hierarchical"))
+
+            customer = customers.get(record.customer_id)
+            customer_name = customer.name if customer else "unknown customer"
+            for item in children:
+                chunks.append(
+                    Chunk(
+                        text=_render_line_item_with_order_context(item, record, customer_name, products),
+                        source_ids=[item.id, record.id],
+                        strategy="hierarchical",
+                    )
+                )
+                consumed_line_item_ids.add(item.id)
+            continue
+
+        chunks.append(
+            Chunk(
+                text=_render_record(record, customers, products),
+                source_ids=[record.id],
+                strategy="hierarchical",
+            )
+        )
+
+    # Line items whose parent order wasn't in the given records - fall back to
+    # a standalone rendering rather than silently dropping them.
+    for record in records:
+        if isinstance(record, OrderLineItem) and record.id not in consumed_line_item_ids:
+            chunks.append(
+                Chunk(
+                    text=_render_record(record, customers, products),
+                    source_ids=[record.id],
+                    strategy="hierarchical",
+                )
+            )
+
+    return chunks
+
+
+def _render_line_item_with_order_context(
+    item: OrderLineItem, order: Order, customer_name: str, products: dict[str, Product]
+) -> str:
+    product = products.get(item.product_id)
+    product_name = product.name if product else "unknown product"
+    return (
+        f"Line item {item.id} for order {order.id} "
+        f"(customer {customer_name}, placed {order.order_date}): "
+        f"{item.quantity} x {product_name} ({item.product_id}) at ${item.unit_price} each."
+    )
+
+
 def _render_record(record: Record, customers: dict[str, Customer], products: dict[str, Product]) -> str:
     match record:
         case Customer():

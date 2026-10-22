@@ -10,7 +10,12 @@ from erp_rag.corpus.schema import (
     OrderStatus,
     Product,
 )
-from erp_rag.ingestion.chunking import Chunk, fixed_size_chunk, record_level_chunk
+from erp_rag.ingestion.chunking import (
+    Chunk,
+    fixed_size_chunk,
+    hierarchical_chunk,
+    record_level_chunk,
+)
 
 # Each customer's str() rendering is exactly 9 whitespace-separated "words" -
 # chosen deliberately so chunk boundaries are easy to compute by hand.
@@ -176,3 +181,78 @@ def test_record_level_chunk_invoice_omits_payment_date_when_unpaid():
 
     assert "overdue" in chunk.text
     assert "paid on" not in chunk.text
+
+
+# --- hierarchical_chunk ---
+
+LINE_ITEM_2 = OrderLineItem(
+    id="OLI-0002",
+    order_id="ORD-0001",
+    product_id="PROD-0001",
+    quantity=2,
+    unit_price=Decimal("28.00"),
+)
+ORPHAN_LINE_ITEM = OrderLineItem(
+    id="OLI-9999",
+    order_id="ORD-9999",  # no matching Order is ever passed alongside this one
+    product_id="PROD-0001",
+    quantity=1,
+    unit_price=Decimal("10.00"),
+)
+
+
+def test_hierarchical_chunk_total_count_matches_record_count():
+    records = [CUSTOMER_1, PRODUCT_1, ORDER_1, LINE_ITEM_1, LINE_ITEM_2]
+    chunks = hierarchical_chunk(records)
+
+    assert len(chunks) == len(records)
+
+
+def test_hierarchical_chunk_order_header_lists_child_line_item_ids():
+    chunks = hierarchical_chunk([ORDER_1, LINE_ITEM_1, LINE_ITEM_2])
+    header = chunks[0]
+
+    assert header.source_ids == ["ORD-0001"]
+    assert "OLI-0001" in header.text
+    assert "OLI-0002" in header.text
+    assert "2 line item(s)" in header.text
+
+
+def test_hierarchical_chunk_order_with_no_line_items_has_no_child_mention():
+    chunks = hierarchical_chunk([ORDER_1])
+
+    assert len(chunks) == 1
+    assert "line item" not in chunks[0].text
+
+
+def test_hierarchical_chunk_line_item_linked_to_parent_order_in_metadata():
+    chunks = hierarchical_chunk([CUSTOMER_1, ORDER_1, LINE_ITEM_1])
+    line_item_chunk = chunks[-1]
+
+    assert line_item_chunk.source_ids == ["OLI-0001", "ORD-0001"]
+
+
+def test_hierarchical_chunk_line_item_includes_customer_and_order_date_context():
+    chunks = hierarchical_chunk([CUSTOMER_1, ORDER_1, LINE_ITEM_1])
+    line_item_chunk = chunks[-1]
+
+    for value in ("OLI-0001", "ORD-0001", "Alice Smith", "2026-01-15"):
+        assert value in line_item_chunk.text
+
+
+def test_hierarchical_chunk_customer_product_invoice_match_record_level():
+    """No hierarchy to represent for these types - should render identically."""
+    records = [CUSTOMER_1, PRODUCT_1, PAID_INVOICE]
+
+    assert hierarchical_chunk(records) == [
+        Chunk(text=chunk.text, source_ids=chunk.source_ids, strategy="hierarchical")
+        for chunk in record_level_chunk(records)
+    ]
+
+
+def test_hierarchical_chunk_orphan_line_item_falls_back_instead_of_dropped():
+    """The orphan's order_id has no matching Order in the input."""
+    chunks = hierarchical_chunk([ORPHAN_LINE_ITEM])
+
+    assert len(chunks) == 1
+    assert chunks[0].source_ids == ["OLI-9999"]
