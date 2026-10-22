@@ -81,9 +81,10 @@ This is structured tabular ERP data, not prose, so the interesting comparison is
 1. **Fixed-size token chunking** — baseline/strawman, chunk raw exports by token count ignoring structure.
 2. **Record-level chunking** — one chunk per invoice / order / stock item, rendered through a text template (e.g. "Invoice INV-1042 for customer Acme Corp, dated 2026-03-01, total $1,240, status: paid, line items: ..."). Expected winner for this domain — preserves the atomic unit a query is usually about.
 3. **Hierarchical chunking** — header/summary chunk + separate line-item chunks, linked by ID, for documents with many line items where record-level chunks would get too large.
-4. **Semantic (embedding-breakpoint) chunking** — relevant only for free-text fields (order notes, comments); embed sentences and split at similarity breakpoints.
 
-Each strategy is indexed separately and run through the same golden dataset with the same retrieval/rerank config, isolating chunking as the only variable — that's the number that goes in the before/after report. Results and the final decision are recorded in [eval/reports/chunking_benchmark.md](eval/reports/chunking_benchmark.md).
+**Considered and deliberately dropped: semantic (embedding-breakpoint) chunking.** This technique's value is finding topic drift in flowing prose — our data has no topics, only discrete facts connected by explicit foreign keys. Giving it something to chunk would have meant inventing a free-text field (e.g. `Order.notes`) that doesn't otherwise belong in the schema, purely to justify the technique — forcing a feature to fit a pre-chosen method rather than the reverse. Since the FK relationships are already perfect, known structure, relying on inferred embedding similarity instead would be strictly worse than what strategies 2-3 already do by using that structure directly. Not benchmarked, on principle, not just skipped for time.
+
+Each remaining strategy is indexed separately and run through the same golden dataset with the same retrieval/rerank config, isolating chunking as the only variable — that's the number that goes in the before/after report. Results and the final decision are recorded in [eval/reports/chunking_benchmark.md](eval/reports/chunking_benchmark.md).
 
 ## 4a. Benchmark-then-decide pattern
 

@@ -11,9 +11,8 @@ Determine which chunking strategy gives the best retrieval quality on the golden
 1. Fixed-size token chunking (baseline)
 2. Record-level chunking (one chunk per invoice/order/stock item)
 3. Hierarchical chunking (header/summary + line-item chunks)
-4. Semantic/embedding-breakpoint chunking (free-text fields only)
 
-See ARCHITECTURE.md §4 for the rationale behind this shortlist.
+See ARCHITECTURE.md §4 for the rationale behind this shortlist. A fourth candidate, semantic/embedding-breakpoint chunking, was considered and deliberately excluded (not benchmarked, not just skipped) — see ARCHITECTURE.md §4 for why: the technique targets topic drift in prose, and this corpus has no topics, only facts connected by explicit foreign keys already more reliable than inferred embedding similarity.
 
 ## Method
 
@@ -36,7 +35,6 @@ _Not yet run._
 | Fixed-size | — | — | — | — |
 | Record-level | — | — | — | — |
 | Hierarchical | — | — | — | — |
-| Semantic (free-text fields) | — | — | — | — |
 
 ## Decision
 

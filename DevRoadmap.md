@@ -82,7 +82,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 
 ## Phase 2 — Chunking strategies (implementation)
 
-**Goal:** All four chunking strategies from ARCHITECTURE.md §4 implemented as swappable functions — not yet benchmarked, not yet chosen.
+**Goal:** All three chunking strategies from ARCHITECTURE.md §4 implemented as swappable functions — not yet benchmarked, not yet chosen. (A fourth, semantic/embedding-breakpoint chunking, was considered and deliberately dropped — see ARCHITECTURE.md §4 for the reasoning: it's a poor fit for FK-structured data with no real free-text/topical content.)
 
 **Tasks:**
 - `src/erp_rag/ingestion/chunking.py` — one function per strategy, common interface (`list[Record] -> list[Chunk]`), each behind a config flag so `scripts/run_eval.py` can select one later.
@@ -98,7 +98,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 - Write these as pure functions with no I/O — makes them trivially unit-testable and reusable in the benchmark script later.
 - Don't pick a "winner" here even if one looks obviously better by eye — that's exactly the instinct the benchmark step (Phase 4) exists to correct or confirm with numbers.
 
-**Done when:** All four strategies run against the Phase 1 corpus and produce plausible-looking chunks (spot-check a few by hand), with unit tests green.
+**Done when:** All three strategies run against the Phase 1 corpus and produce plausible-looking chunks (spot-check a few by hand), with unit tests green.
 
 ---
 
@@ -130,7 +130,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 - `src/erp_rag/indexing/vectorstore.py` — Chroma wrapper **as a class** (holds the persistent client connection, see the code-style note above), persist to `data/processed/`; `src/erp_rag/indexing/sparse_index.py` — BM25 via `rank_bm25`.
 - `src/erp_rag/retrieval/hybrid_retriever.py` — RRF fusion of dense + sparse results.
 - Pick a **scratch embedding model** (e.g. `bge-small-en-v1.5`) purely as a fixed baseline to run the chunking benchmark with — this is not the final embedding choice (that's Phase 5), just a stand-in so chunking can be isolated as the one variable.
-- Run all four chunking strategies through the golden dataset (Phase 3), fill in `eval/reports/chunking_benchmark.md` with real numbers, record the decision.
+- Run all three chunking strategies through the golden dataset (Phase 3), fill in `eval/reports/chunking_benchmark.md` with real numbers, record the decision.
 
 **Tests to add (integration):**
 - Build a tiny fixture index (5–10 known records) and assert a known query retrieves the known-correct chunk — this is the first integration test, and it should stay in the suite permanently as a smoke test for "is retrieval fundamentally working."
