@@ -1,0 +1,151 @@
+id,name,brand,category,unit_price,quantity_in_stock,reorder_threshold
+PROD-0001,Wireless Mouse,"Hill, Walker and Doyle",Electronics,351.94,456,39
+PROD-0002,Webcam,Johnson-Davis,Electronics,124.64,308,6
+PROD-0003,Aluminum Rod,"Santos, Gardner and Robinson",Raw Materials,306.35,414,5
+PROD-0004,Whiteboard Markers,Peterson-Moore,Office Supplies,495.97,172,11
+PROD-0005,27-inch Monitor,Howard LLC,Electronics,314.33,413,7
+PROD-0006,Design Software License,Dudley Group,Software Licenses,45.7,150,45
+PROD-0007,Plastic Pellets,"Lee, Jones and Stanley",Raw Materials,400.37,40,19
+PROD-0008,27-inch Monitor,Chavez-Flowers,Electronics,88.47,181,18
+PROD-0009,Monitor Stand,"Wong, Lynch and Jackson",Furniture,378.31,83,34
+PROD-0010,Cloud Storage Plan,"Watts, Robinson and Nguyen",Software Licenses,398.99,28,19
+PROD-0011,Mechanical Keyboard,Adams-Clark,Electronics,487.72,448,50
+PROD-0012,Standing Desk,"Porter, Wilkerson and Day",Furniture,78.33,71,20
+PROD-0013,Wood Plank,Burgess-Patterson,Raw Materials,303.51,185,19
+PROD-0014,Binder Clips,Davis-Williams,Office Supplies,61.19,321,15
+PROD-0015,Design Software License,Cruz PLC,Software Licenses,244.67,128,40
+PROD-0016,Noise-Cancelling Headphones,"Wilson, Dyer and Potter",Electronics,398.82,174,12
+PROD-0017,Bookshelf,Chavez Ltd,Furniture,453.92,134,37
+PROD-0018,Binder Clips,Harrell LLC,Office Supplies,435.81,259,43
+PROD-0019,Printer Paper (Ream),Farmer-Ryan,Office Supplies,403.67,470,5
+PROD-0020,Plastic Pellets,Smith-Hickman,Raw Materials,454.39,122,8
+PROD-0021,Binder Clips,Miller Group,Office Supplies,422.8,500,39
+PROD-0022,Printer Paper (Ream),"Alvarez, Pierce and Baker",Office Supplies,451.77,216,18
+PROD-0023,Aluminum Rod,"Collins, Carney and Santos",Raw Materials,229.66,231,12
+PROD-0024,Printer Paper (Ream),Morgan PLC,Office Supplies,288.29,301,19
+PROD-0025,Wireless Mouse,"Welch, Perez and Whitehead",Electronics,445.42,36,37
+PROD-0026,Ballpoint Pens (Box),"Washington, Ryan and Cummings",Office Supplies,456.73,295,35
+PROD-0027,Sticky Notes,Lee-Davis,Office Supplies,225.45,216,31
+PROD-0028,Antivirus License,"Valdez, Lucas and Brown",Software Licenses,377.43,409,11
+PROD-0029,Printer Paper (Ream),Herrera and Sons,Office Supplies,221.23,142,34
+PROD-0030,Stapler,Morton-Chase,Office Supplies,55.6,333,39
+PROD-0031,Wireless Mouse,Martin Group,Electronics,251.27,442,30
+PROD-0032,USB-C Hub,Smith-Myers,Electronics,479.58,146,32
+PROD-0033,Copper Wire,Lee and Sons,Raw Materials,34.74,376,39
+PROD-0034,Noise-Cancelling Headphones,Brown-Silva,Electronics,262.67,80,8
+PROD-0035,Steel Sheet,Jones Inc,Raw Materials,350.3,206,12
+PROD-0036,Aluminum Rod,"Wheeler, Harvey and Barnes",Raw Materials,303.72,267,25
+PROD-0037,Standing Desk,"Moran, Allen and Foster",Furniture,348.82,153,34
+PROD-0038,Office Chair,Ellis PLC,Furniture,56.9,275,18
+PROD-0039,Plastic Pellets,Mahoney Inc,Raw Materials,455.31,189,23
+PROD-0040,Sticky Notes,"Warner, Carr and Archer",Office Supplies,339.67,4,47
+PROD-0041,Plastic Pellets,"Garcia, Humphrey and Baker",Raw Materials,460.13,380,40
+PROD-0042,Ballpoint Pens (Box),Jacobs-Robbins,Office Supplies,109.87,324,21
+PROD-0043,Copper Wire,Whitehead-Mathis,Raw Materials,52.81,216,22
+PROD-0044,Wireless Mouse,Wise-Walsh,Electronics,139.2,379,33
+PROD-0045,Copper Wire,"Smith, Jones and Ware",Raw Materials,467.19,279,7
+PROD-0046,Desk Lamp,"Hernandez, Anderson and Parker",Furniture,465.5,460,27
+PROD-0047,Whiteboard Markers,Estrada LLC,Office Supplies,404.71,452,31
+PROD-0048,Aluminum Rod,Hancock and Sons,Raw Materials,456.52,12,16
+PROD-0049,Bookshelf,"Shields, Cochran and Adams",Furniture,408.89,55,29
+PROD-0050,27-inch Monitor,Gonzalez Group,Electronics,184.39,420,19
+PROD-0051,Stapler,"Lee, Murphy and Lin",Office Supplies,400.35,179,46
+PROD-0052,Copper Wire,"Zavala, Herrera and Crosby",Raw Materials,64.33,91,42
+PROD-0053,Office Chair,Carlson LLC,Furniture,378.4,223,43
+PROD-0054,Steel Sheet,Lam-Lee,Raw Materials,27.9,223,5
+PROD-0055,Wood Plank,"Ball, Harmon and Lambert",Raw Materials,191.55,35,47
+PROD-0056,Desk Lamp,Alvarado-Martinez,Furniture,465.38,259,24
+PROD-0057,Cloud Storage Plan,Terry-Spencer,Software Licenses,103.53,340,29
+PROD-0058,Binder Clips,"Turner, Kelley and Smith",Office Supplies,151.26,220,42
+PROD-0059,Plastic Pellets,Ramos-Lowe,Raw Materials,266.6,406,15
+PROD-0060,Mechanical Keyboard,"Beck, Harvey and Davis",Electronics,492.96,120,48
+PROD-0061,Standing Desk,Hernandez Inc,Furniture,130.6,312,9
+PROD-0062,VPN Subscription,"Johnston, Higgins and Cruz",Software Licenses,209.31,75,46
+PROD-0063,Wireless Mouse,Robinson-Brock,Electronics,361.66,237,8
+PROD-0064,Aluminum Rod,Bryant Group,Raw Materials,346.67,286,43
+PROD-0065,Bookshelf,"Briggs, Mcclain and Simmons",Furniture,469.7,228,15
+PROD-0066,VPN Subscription,Walton-Larsen,Software Licenses,146.98,398,38
+PROD-0067,Office Suite License,Gonzales-Reeves,Software Licenses,125.34,171,25
+PROD-0068,Steel Sheet,Hernandez Group,Raw Materials,360.19,361,18
+PROD-0069,27-inch Monitor,Rivera-Owens,Electronics,36.26,426,31
+PROD-0070,Design Software License,"Smith, Gilmore and Johnston",Software Licenses,249.0,482,27
+PROD-0071,Bookshelf,Medina-Navarro,Furniture,414.77,459,19
+PROD-0072,Office Suite License,Graham-Johnson,Software Licenses,177.85,347,30
+PROD-0073,Sticky Notes,Hooper PLC,Office Supplies,18.5,303,41
+PROD-0074,Wireless Mouse,"Patterson, Camacho and White",Electronics,138.48,167,18
+PROD-0075,Cloud Storage Plan,Juarez-Gray,Software Licenses,390.53,129,10
+PROD-0076,Antivirus License,"Ryan, Cooke and Bell",Software Licenses,337.8,399,46
+PROD-0077,Wireless Mouse,Gonzalez Inc,Electronics,323.19,122,13
+PROD-0078,Antivirus License,"Gould, Marshall and Scott",Software Licenses,193.21,310,43
+PROD-0079,USB-C Hub,Rodriguez-Johnson,Electronics,164.73,346,29
+PROD-0080,Office Suite License,Vargas Ltd,Software Licenses,129.13,356,24
+PROD-0081,Steel Sheet,"Patton, Reed and Patterson",Raw Materials,194.8,259,46
+PROD-0082,Office Chair,Short-Garcia,Furniture,496.46,325,34
+PROD-0083,Sticky Notes,Gross Ltd,Office Supplies,143.78,413,39
+PROD-0084,VPN Subscription,Petersen-Vargas,Software Licenses,170.31,425,10
+PROD-0085,Bookshelf,Christensen PLC,Furniture,317.85,194,26
+PROD-0086,27-inch Monitor,White-Lewis,Electronics,413.33,174,22
+PROD-0087,Plastic Pellets,"Smith, Vaughan and Miller",Raw Materials,373.52,250,40
+PROD-0088,Whiteboard Markers,Brewer-Henry,Office Supplies,410.2,47,23
+PROD-0089,Sticky Notes,"Sanchez, Beck and Wood",Office Supplies,288.67,176,32
+PROD-0090,Plastic Pellets,Warner-Nelson,Raw Materials,133.29,61,17
+PROD-0091,Office Chair,"Herrera, Gill and Lopez",Furniture,115.94,247,22
+PROD-0092,Wood Plank,"Campbell, Garcia and Lee",Raw Materials,121.46,91,24
+PROD-0093,Noise-Cancelling Headphones,"Martinez, Williams and Brown",Electronics,154.89,483,13
+PROD-0094,Antivirus License,Andrews Group,Software Licenses,250.56,174,16
+PROD-0095,Mechanical Keyboard,Wilson-Jones,Electronics,256.9,295,45
+PROD-0096,USB-C Hub,Shepherd LLC,Electronics,48.31,60,40
+PROD-0097,Design Software License,"Gibbs, Perez and Mills",Software Licenses,235.56,152,42
+PROD-0098,Cloud Storage Plan,"Oliver, Lynch and Singh",Software Licenses,490.97,106,45
+PROD-0099,Ballpoint Pens (Box),"Miller, Allen and Arnold",Office Supplies,85.0,209,33
+PROD-0100,Copper Wire,Johnson-Roberts,Raw Materials,149.89,440,34
+PROD-0101,Noise-Cancelling Headphones,Bradshaw Ltd,Electronics,306.84,411,17
+PROD-0102,Antivirus License,"Walker, Hernandez and Baker",Software Licenses,77.9,30,15
+PROD-0103,Desk Lamp,"Holloway, Morse and Gonzales",Furniture,244.88,155,49
+PROD-0104,Cloud Storage Plan,"Fernandez, Kim and George",Software Licenses,460.55,376,25
+PROD-0105,Plastic Pellets,Davis Ltd,Raw Materials,433.73,300,6
+PROD-0106,Desk Lamp,Hines and Sons,Furniture,245.66,333,33
+PROD-0107,Standing Desk,"Graham, Olsen and Costa",Furniture,245.44,209,26
+PROD-0108,Monitor Stand,Hodge LLC,Furniture,215.88,253,23
+PROD-0109,Design Software License,Gibson LLC,Software Licenses,134.41,59,30
+PROD-0110,Steel Sheet,"Booth, Murray and Brown",Raw Materials,270.46,318,36
+PROD-0111,Antivirus License,Adams and Sons,Software Licenses,479.36,224,49
+PROD-0112,Antivirus License,Dudley PLC,Software Licenses,414.3,363,15
+PROD-0113,Desk Lamp,Tran Inc,Furniture,120.14,236,12
+PROD-0114,Sticky Notes,"Carter, Thornton and Perry",Office Supplies,252.6,124,34
+PROD-0115,Aluminum Rod,Lee-Greene,Raw Materials,387.17,442,9
+PROD-0116,Bookshelf,Villa-Romero,Furniture,425.0,144,24
+PROD-0117,Wood Plank,"Burns, Hernandez and Ryan",Raw Materials,181.42,282,39
+PROD-0118,VPN Subscription,Kane-Pollard,Software Licenses,127.73,196,19
+PROD-0119,Antivirus License,Garner-Thornton,Software Licenses,420.48,197,47
+PROD-0120,Sticky Notes,Martinez PLC,Office Supplies,174.12,447,33
+PROD-0121,Webcam,Smith-Thomas,Electronics,450.83,496,14
+PROD-0122,27-inch Monitor,Morgan-Schwartz,Electronics,337.1,436,26
+PROD-0123,Copper Wire,Sims-Clay,Raw Materials,254.69,18,44
+PROD-0124,USB-C Hub,"Cohen, Mitchell and Perez",Electronics,51.55,500,11
+PROD-0125,27-inch Monitor,Benson Inc,Electronics,28.41,407,8
+PROD-0126,Filing Cabinet,Jordan-Sanchez,Furniture,215.72,349,16
+PROD-0127,Printer Paper (Ream),Lynch Group,Office Supplies,322.87,123,36
+PROD-0128,Aluminum Rod,Murray LLC,Raw Materials,240.32,341,5
+PROD-0129,Cloud Storage Plan,"Payne, Jones and Landry",Software Licenses,305.38,327,32
+PROD-0130,Bookshelf,Gonzalez-Cruz,Furniture,252.13,121,29
+PROD-0131,Plastic Pellets,"Phillips, Lyons and Johnson",Raw Materials,429.84,202,22
+PROD-0132,Webcam,"Osborne, Beltran and Lozano",Electronics,386.63,426,23
+PROD-0133,Binder Clips,Robinson-Lee,Office Supplies,133.86,386,47
+PROD-0134,Whiteboard Markers,Berger Ltd,Office Supplies,25.39,403,33
+PROD-0135,Webcam,Oconnor-Davis,Electronics,156.41,382,31
+PROD-0136,Printer Paper (Ream),Buchanan LLC,Office Supplies,276.64,467,22
+PROD-0137,Ballpoint Pens (Box),Coffey-Phillips,Office Supplies,450.43,411,12
+PROD-0138,Antivirus License,Webster and Sons,Software Licenses,445.86,370,48
+PROD-0139,Design Software License,Davis-Foster,Software Licenses,140.68,63,34
+PROD-0140,Monitor Stand,"Chambers, Richards and Carson",Furniture,486.47,55,48
+PROD-0141,Sticky Notes,Harvey PLC,Office Supplies,172.78,113,46
+PROD-0142,Noise-Cancelling Headphones,Blankenship-Turner,Electronics,214.14,71,7
+PROD-0143,Mechanical Keyboard,Wilson-Young,Electronics,280.17,198,34
+PROD-0144,Monitor Stand,"Horton, Fernandez and Matthews",Furniture,377.19,453,31
+PROD-0145,27-inch Monitor,"Russell, Lynn and Johnson",Electronics,194.27,227,33
+PROD-0146,Ballpoint Pens (Box),Pollard LLC,Office Supplies,283.82,183,8
+PROD-0147,Cloud Storage Plan,Donaldson Group,Software Licenses,51.84,108,46
+PROD-0148,Steel Sheet,Buchanan and Sons,Raw Materials,69.72,105,9
+PROD-0149,Aluminum Rod,"Robinson, Kane and Murphy",Raw Materials,80.76,1,22
+PROD-0150,Printer Paper (Ream),"King, Thompson and Guerrero",Office Supplies,18.16,7,27
