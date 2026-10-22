@@ -4,6 +4,8 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 
 **How to read each phase:** Goal → Tasks → Tests to add → CI/CD touchpoint → Advice → Done when. The "CI/CD touchpoint" line is there deliberately — CI/CD isn't one phase, it's a thread that thickens as the project grows. Same for testing: unit tests start on day one, integration tests appear once components connect, "eval tests" (RAGAS/golden dataset) are a third category specific to ML systems.
 
+**Code style: functions vs. classes.** Default to plain functions — something with no state to hold between calls doesn't need a class wrapped around it (the Phase 1 corpus generators are the reference example: `generate_customers(count, seed) -> list[Customer]`, no class needed, nothing persists between calls). Reach for a class specifically where it's earned: real state held across calls (a loaded model, an open client connection) or real polymorphism (multiple interchangeable implementations behind one shared interface). Concretely, three pieces later in this roadmap are deliberately class-based for exactly these reasons, not as a general style choice: `indexing/vectorstore.py` (holds a persistent Chroma client connection, Phase 4), `retrieval/reranker.py` (holds a loaded CrossEncoder model — expensive to reload every call, Phase 6), and `generation/llm.py` (a genuine Strategy pattern: an `LLMProvider` base class with `ClaudeProvider`/`OpenAIProvider` subclasses, directly motivated by the swappable-provider requirement, Phase 8). Everything else — chunking, RRF fusion, the LangGraph node functions in Phase 7 — stays as plain functions, since forcing a class around a stateless transform adds ceremony without adding anything a function doesn't already do.
+
 ---
 
 ## Concept map — where each idea lives
@@ -125,7 +127,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 **Goal:** A working Chroma + BM25 hybrid retriever, and the first real benchmark result: which chunking strategy wins.
 
 **Tasks:**
-- `src/erp_rag/indexing/vectorstore.py` — Chroma wrapper (persist to `data/processed/`), `src/erp_rag/indexing/sparse_index.py` — BM25 via `rank_bm25`.
+- `src/erp_rag/indexing/vectorstore.py` — Chroma wrapper **as a class** (holds the persistent client connection, see the code-style note above), persist to `data/processed/`; `src/erp_rag/indexing/sparse_index.py` — BM25 via `rank_bm25`.
 - `src/erp_rag/retrieval/hybrid_retriever.py` — RRF fusion of dense + sparse results.
 - Pick a **scratch embedding model** (e.g. `bge-small-en-v1.5`) purely as a fixed baseline to run the chunking benchmark with — this is not the final embedding choice (that's Phase 5), just a stand-in so chunking can be isolated as the one variable.
 - Run all four chunking strategies through the golden dataset (Phase 3), fill in `eval/reports/chunking_benchmark.md` with real numbers, record the decision.
@@ -168,7 +170,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 **Goal:** Decide whether reranking earns its latency, and which reranker, using the now-locked chunking + embedding choices as fixed variables.
 
 **Tasks:**
-- `src/erp_rag/retrieval/reranker.py` — wraps a `sentence-transformers` `CrossEncoder`, config-swappable, **including a "none" option** as the baseline.
+- `src/erp_rag/retrieval/reranker.py` — **a class** wrapping a `sentence-transformers` `CrossEncoder` (holds the loaded model, see the code-style note above), config-swappable, **including a "none" option** as the baseline.
 - Run all candidates (+ no-reranker baseline) through the golden dataset, fill in `eval/reports/reranker_benchmark.md`.
 
 **Tests to add (unit + integration):** Unit test that reranking preserves the candidate set (no chunks silently dropped, only reordered — a common cross-encoder integration bug); integration test extending Phase 4's fixture-index test through the reranking step.
@@ -208,7 +210,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 **Goal:** Cited answer synthesis, plus the input and output guardrails from ARCHITECTURE.md.
 
 **Tasks:**
-- `src/erp_rag/generation/llm.py` — provider abstraction (Claude default, OpenAI swap-in via config, not hardcoded).
+- `src/erp_rag/generation/llm.py` — provider abstraction **as a Strategy pattern**: an `LLMProvider` base class, `ClaudeProvider`/`OpenAIProvider` subclasses implementing a shared `generate()` method (Claude default, OpenAI swap-in via config, not hardcoded). Real inheritance and polymorphism here, not ceremony — see the code-style note above.
 - `src/erp_rag/guardrails/input_guard.py` — prompt injection + cross-customer data leakage detection.
 - `src/erp_rag/guardrails/output_guard.py` — groundedness check against retrieved context, "I don't know" fallback.
 
@@ -322,26 +324,29 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 
 ## Phase 14 — Local demo packaging
 
-**Goal:** `docker-compose up` gets a stranger (or a reviewer) from zero to a working chat UI against the full pipeline, locally.
+**Goal:** `docker-compose up` gets a stranger (or a reviewer) from zero to a working chat experience against the full pipeline, locally — served through a real HTTP API, not an in-process script.
+
+**Decided (updated from the original "Streamlit direct-call" default): we're building a public API with FastAPI.** This formalizes the service-layer, UI-agnostic function design already used for indexing/retrieval/generation (see Phase 7-9 discussion) — those functions were written so *any* consumer could call them identically, and the consumer we're committing to is a real HTTP API, not just an in-process Streamlit call.
 
 **Tasks:**
-- Build a thin UI — **Streamlit is the pragmatic default** (fastest to build, good enough for a demo, direct Python integration with the pipeline) over Gradio (similar trade-offs, less common in this specific niche) or a full FastAPI+frontend split (more "real" architecture, meaningfully more work for a demo that doesn't need a public API contract). Revisit this choice if a separate API layer becomes independently useful later.
-- `docker-compose.yml` bringing up: the app container, Langfuse (from Phase 11), and Chroma's persistence volume.
+- Build a FastAPI backend (e.g. `src/erp_rag/api/`) exposing the pipeline — a `/query` endpoint (plus a `/health` check) wrapping the agent's single-entry-point function (`answer_query()` or equivalent) discussed during the indexing/retrieval/generation design. FastAPI's automatic OpenAPI/Swagger docs (`/docs`) are a bonus here: a reviewer can exercise the API directly, no UI required, which is its own small portfolio artifact.
+- Build a thin UI — Streamlit remains the pragmatic default for the chat interface — that calls the FastAPI backend **over HTTP**, not by importing pipeline functions in-process. This is the one real architecture shift from the original plan: UI and pipeline become two separate processes talking over the API, rather than one monolithic Streamlit script.
+- `docker-compose.yml` bringing up: the API container, the UI container, Langfuse (from Phase 11), and Chroma's persistence volume.
 - A single documented command (`make demo` or a `poetry run` script) — this is the thing a reviewer actually runs, so it needs to work on a clean clone with nothing but Docker and an API key.
 
-**Tests to add:** A container smoke test — the compose stack comes up healthy and the UI responds to a trivial request — worth automating in CI as a final integration check, even if it can't call the real Claude API there.
+**Tests to add:** API-level tests using FastAPI's `TestClient` (hit `/query` with a known question, assert a well-formed response) alongside a container smoke test — the compose stack comes up healthy and both the API and UI respond to a trivial request.
 
-**CI/CD touchpoint:** Optional CI job building the Docker image on every push to `main`, catching "works on my machine" packaging drift early.
+**CI/CD touchpoint:** Optional CI job building both Docker images (API + UI) on every push to `main`, catching "works on my machine" packaging drift early.
 
 **Advice:** Test this on a genuinely clean clone (or ask someone else to try it) before considering it done — packaging bugs are invisible from the machine that's had the dependencies installed the whole time.
 
-**Done when:** A clean clone + `docker-compose up` + one documented command produces a working chat UI.
+**Done when:** A clean clone + `docker-compose up` + one documented command produces a working chat UI backed by a real FastAPI service, with `/docs` reachable and independently usable.
 
 ---
 
 ## Phase 15 — Web deployment
 
-**Goal:** A reachable public (or shareable) demo URL.
+**Goal:** A reachable public (or shareable) URL for the FastAPI backend (and the UI that talks to it).
 
 **This is an open decision, not pre-committed** — revisit when you get here, but the trade-offs as they stand:
 
