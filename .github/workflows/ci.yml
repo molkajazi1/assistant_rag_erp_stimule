@@ -6,7 +6,7 @@ on:                               # TRIGGERS : quand lancer le workflow
   # workflow_dispatch:              # bouton "Run workflow" manuel (étape 5 du kata)
 
 jobs:
-  checks:                         # JOB : renommé (fait plus que du lint maintenant)
+  lint:                           # JOB : vérifie le style du code
     runs-on: ubuntu-latest        # RUNNER : machine Linux de GitHub
     steps:
       - uses: actions/checkout@v4          # 1. télécharger ton code (sinon le runner est vide)
@@ -16,4 +16,25 @@ jobs:
       - run: pipx install poetry           # 3. installer Poetry (pas présent par défaut)
       - run: poetry install                # 4. installer tes dépendances (ruff, pytest)
       - run: poetry run ruff check .       # 5. le lint
-      - run: poetry run pytest             # 6. les tests unitaires
+
+  test:                           # JOB : lance les tests unitaires (runner séparé du job lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "^3.11"
+      - run: pipx install poetry
+      - run: poetry install
+      - run: poetry run pytest             # les tests unitaires
+
+# Pourquoi 2 jobs séparés (lint + test) plutôt qu'un seul job avec 2 steps :
+# - Par défaut, les jobs tournent en PARALLÈLE (contrairement aux steps d'un
+#   même job, qui tournent en séquence et s'arrêtent au premier échec).
+# - Si le lint échoue, on veut quand même savoir si les tests passent, dans
+#   le même push, pas seulement après avoir corrigé le lint et re-poussé.
+# - Ça donne aussi 2 checks séparés et visibles sur la PR (plus clair en un
+#   coup d'oeil : est-ce juste du style, ou la logique est cassée).
+# Coût : chaque job réinstalle tout depuis zéro (checkout, python, poetry,
+# dépendances) car ce sont deux runners différents donc un peu de duplication
+# et un peu plus de compute total, mais ça reste négligeable à cette taille.
