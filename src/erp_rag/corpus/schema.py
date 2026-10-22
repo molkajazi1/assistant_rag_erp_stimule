@@ -39,6 +39,7 @@ class Customer(BaseModel):
 class Product(BaseModel):
     id: str
     name: str
+    brand: str
     category: str
     unit_price: Decimal
     quantity_in_stock: int = Field(ge=0)
