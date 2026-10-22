@@ -49,3 +49,63 @@ def fixed_size_chunk(records: list[Record], chunk_size: int = DEFAULT_CHUNK_SIZE
         )
 
     return chunks
+
+
+def record_level_chunk(records: list[Record]) -> list[Chunk]:
+    """One chunk per record, rendered through a type-specific template.
+
+    Foreign keys to a customer/product are resolved to a human-readable name
+    (not just the raw id) so a chunk reads like a sentence an embedding model
+    can actually match against a natural-language query. Does NOT embed a
+    full line-item breakdown into order/invoice text - that is what strategy 3
+    (hierarchical) exists to handle; doing it here would blur the comparison
+    between the two strategies.
+    """
+    customers = {r.id: r for r in records if isinstance(r, Customer)}
+    products = {r.id: r for r in records if isinstance(r, Product)}
+
+    return [
+        Chunk(
+            text=_render_record(record, customers, products),
+            source_ids=[record.id],
+            strategy="record_level",
+        )
+        for record in records
+    ]
+
+
+def _render_record(record: Record, customers: dict[str, Customer], products: dict[str, Product]) -> str:
+    match record:
+        case Customer():
+            return (
+                f"Customer {record.id}: {record.name}, email {record.email}, "
+                f"located at {record.address}, {record.city}, {record.country}."
+            )
+        case Product():
+            return (
+                f"Product {record.id}: {record.name} by {record.brand}, category {record.category}, "
+                f"unit price ${record.unit_price}, {record.quantity_in_stock} in stock, "
+                f"reorder threshold {record.reorder_threshold}."
+            )
+        case Order():
+            customer = customers.get(record.customer_id)
+            customer_name = customer.name if customer else "unknown customer"
+            return (
+                f"Order {record.id} for customer {customer_name} ({record.customer_id}), "
+                f"placed on {record.order_date}, status {record.status}."
+            )
+        case OrderLineItem():
+            product = products.get(record.product_id)
+            product_name = product.name if product else "unknown product"
+            return (
+                f"Line item {record.id} on order {record.order_id}: {record.quantity} x "
+                f"{product_name} ({record.product_id}) at ${record.unit_price} each."
+            )
+        case Invoice():
+            text = (
+                f"Invoice {record.id} for order {record.order_id}, issued {record.invoice_date}, "
+                f"due {record.due_date}, amount ${record.amount}, status {record.status}"
+            )
+            if record.payment_date is not None:
+                return text + f", paid on {record.payment_date}."
+            return text + "."
