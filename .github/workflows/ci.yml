@@ -1,23 +1,23 @@
-name: CI                          # nom affiché dans l'onglet Actions
+name: CI                          # name displayed in the Actions tab
 
-on:                               # TRIGGERS : quand lancer le workflow
-  push:                           # à chaque push
-  # pull_request:                   # à chaque PR
-  # workflow_dispatch:              # bouton "Run workflow" manuel (étape 5 du kata)
+on:                               # TRIGGERS: when to run the workflow
+  push:                           # on every push
+  # pull_request:                   # on every PR
+  # workflow_dispatch:              # manual "Run workflow" button (kata step 5)
 
 jobs:
-  lint:                           # JOB : vérifie le style du code
-    runs-on: ubuntu-latest        # RUNNER : machine Linux de GitHub
+  lint:                           # JOB: checks code style
+    runs-on: ubuntu-latest        # RUNNER: GitHub's Linux machine
     steps:
-      - uses: actions/checkout@v4          # 1. télécharger ton code (sinon le runner est vide)
-      - uses: actions/setup-python@v5      # 2. installer Python
+      - uses: actions/checkout@v4          # 1. download your code (otherwise the runner is empty)
+      - uses: actions/setup-python@v5      # 2. install Python
         with:
-          python-version: "^3.11"          #    mets la même version que dans ton pyproject.toml
-      - run: pipx install poetry           # 3. installer Poetry (pas présent par défaut)
-      - run: poetry install                # 4. installer tes dépendances (ruff, pytest)
-      - run: poetry run ruff check .       # 5. le lint
+          python-version: "^3.11"          #    match the same version as in your pyproject.toml
+      - run: pipx install poetry           # 3. install Poetry (not present by default)
+      - run: poetry install                # 4. install your dependencies (ruff, pytest)
+      - run: poetry run ruff check .       # 5. the lint check
 
-  test:                           # JOB : lance les tests unitaires (runner séparé du job lint)
+  test:                           # JOB: runs the unit tests (separate runner from the lint job)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,15 +26,16 @@ jobs:
           python-version: "^3.11"
       - run: pipx install poetry
       - run: poetry install
-      - run: poetry run pytest             # les tests unitaires
+      - run: poetry run pytest             # the unit tests
 
-# Pourquoi 2 jobs séparés (lint + test) plutôt qu'un seul job avec 2 steps :
-# - Par défaut, les jobs tournent en PARALLÈLE (contrairement aux steps d'un
-#   même job, qui tournent en séquence et s'arrêtent au premier échec).
-# - Si le lint échoue, on veut quand même savoir si les tests passent, dans
-#   le même push, pas seulement après avoir corrigé le lint et re-poussé.
-# - Ça donne aussi 2 checks séparés et visibles sur la PR (plus clair en un
-#   coup d'oeil : est-ce juste du style, ou la logique est cassée).
-# Coût : chaque job réinstalle tout depuis zéro (checkout, python, poetry,
-# dépendances) car ce sont deux runners différents donc un peu de duplication
-# et un peu plus de compute total, mais ça reste négligeable à cette taille.
+# Why 2 separate jobs (lint + test) instead of one job with 2 steps:
+# - By default, jobs run in PARALLEL (unlike steps within the same job,
+#   which run in sequence and stop at the first failure).
+# - If lint fails, we still want to know whether the tests pass, in the
+#   same push, not only after fixing lint and pushing again.
+# - It also gives 2 separate, visible checks on the PR (clearer at a
+#   glance: is it just style, or is the logic actually broken).
+# Cost: each job reinstalls everything from scratch (checkout, python,
+# poetry, dependencies) since they're two different runners, so there's
+# some duplication and a bit more total compute, but it's negligible at
+# this size.
