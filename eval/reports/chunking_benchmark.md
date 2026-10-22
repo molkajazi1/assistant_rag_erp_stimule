@@ -38,6 +38,12 @@ _Not yet run._
 | Hierarchical | — | — | — | — |
 | Semantic (free-text fields) | — | — | — | — |
 
+## Possible future ablation: overlap on fixed-size chunking
+
+`fixed_size_chunk()` (`src/erp_rag/ingestion/chunking.py`) deliberately has no overlap between chunks — kept maximally naive so the baseline/strawman comparison against the other strategies is as unambiguous as possible (no record-awareness of any kind). Overlapping chunks (consecutive chunks sharing some words at their boundary) is a well-known, still-fully-naive refinement real systems commonly use (e.g. LangChain's default text splitter ships with overlap) to soften the "context lost at a hard boundary" problem, without needing any record structure awareness.
+
+Worth trying as a follow-up *if* record-level chunking (or the others) doesn't win by much — would tell us whether a cheap, structure-agnostic fix closes most of the gap, or whether genuinely respecting record boundaries is what actually matters. Not implemented now, on purpose — see DevRoadmap.md Phase 2 discussion.
+
 ## Decision
 
 _Not yet decided._
