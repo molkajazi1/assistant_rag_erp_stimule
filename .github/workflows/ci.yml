@@ -2,7 +2,7 @@ name: CI                          # name displayed in the Actions tab
 
 on:                               # TRIGGERS: when to run the workflow
   push:                           # on every push
-  # pull_request:                   # on every PR
+  pull_request:                   # on every PR
   # workflow_dispatch:              # manual "Run workflow" button (kata step 5)
 
 jobs:
