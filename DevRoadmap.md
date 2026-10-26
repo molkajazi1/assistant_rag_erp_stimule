@@ -1,6 +1,6 @@
 # Development & Deployment Roadmap
 
-A step-by-step path from the current state (pre-development, docs only) to a deployed, quantified RAG demo. This is a working document — update it as reality diverges from the plan (a phase turns out to be harder/easier, an order needs to change). Read alongside [ARCHITECTURE.md](ARCHITECTURE.md) (what we're building and why) and [CLAUDE.md](CLAUDE.md) (working conventions).
+A step-by-step path from pre-development to a deployed, quantified RAG demo. This is a working document — update it as reality diverges from the plan (a phase turns out to be harder/easier, an order needs to change). Read alongside [ARCHITECTURE.md](ARCHITECTURE.md) (what we're building and why) and [CLAUDE.md](CLAUDE.md) (working conventions).
 
 **How to read each phase:** Goal → Tasks → Tests to add → CI/CD touchpoint → Advice → Done when. The "CI/CD touchpoint" line is there deliberately — CI/CD isn't one phase, it's a thread that thickens as the project grows. Same for testing: unit tests start on day one, integration tests appear once components connect, "eval tests" (RAGAS/golden dataset) are a third category specific to ML systems.
 
