@@ -109,7 +109,9 @@ def hierarchical_chunk(records: list[Record]) -> list[Chunk]:
             for item in children:
                 chunks.append(
                     Chunk(
-                        text=_render_line_item_with_order_context(item, record, customer_name, products),
+                        text=_render_line_item_with_order_context(
+                            item, record, customer_name, products
+                        ),
                         source_ids=[item.id, record.id],
                         strategy="hierarchical",
                     )
@@ -152,7 +154,9 @@ def _render_line_item_with_order_context(
     )
 
 
-def _render_record(record: Record, customers: dict[str, Customer], products: dict[str, Product]) -> str:
+def _render_record(
+    record: Record, customers: dict[str, Customer], products: dict[str, Product]
+) -> str:
     match record:
         case Customer():
             return (

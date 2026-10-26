@@ -3,7 +3,7 @@ name: CI                          # name displayed in the Actions tab
 on:                               # TRIGGERS: when to run the workflow
   push:                           # on every push
   pull_request:                   # on every PR
-  # workflow_dispatch:              # manual "Run workflow" button (kata step 5)
+  workflow_dispatch:              # manual "Run workflow" button in the Actions tab
 
 jobs:
   lint:                           # JOB: checks code style
@@ -12,10 +12,11 @@ jobs:
       - uses: actions/checkout@v4          # 1. download your code (otherwise the runner is empty)
       - uses: actions/setup-python@v5      # 2. install Python
         with:
-          python-version: "^3.11"          #    match the same version as in your pyproject.toml
+          python-version: "3.11"           #    lowest version allowed by pyproject.toml's requires-python
       - run: pipx install poetry           # 3. install Poetry (not present by default)
       - run: poetry install                # 4. install your dependencies (ruff, pytest)
-      - run: poetry run ruff check .       # 5. the lint check
+      - run: poetry run ruff check .       # 5. the lint check (likely bugs)
+      - run: poetry run ruff format --check .  # 6. the format check (layout only, changes nothing)
 
   test:                           # JOB: runs the unit tests (separate runner from the lint job)
     runs-on: ubuntu-latest
@@ -23,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "^3.11"
+          python-version: "3.11"
       - run: pipx install poetry
       - run: poetry install
       - run: poetry run pytest             # the unit tests

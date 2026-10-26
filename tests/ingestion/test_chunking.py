@@ -172,7 +172,15 @@ def test_record_level_chunk_line_item_includes_all_fields_and_resolves_product_n
 def test_record_level_chunk_invoice_includes_payment_date_when_paid():
     chunk = record_level_chunk([PAID_INVOICE])[0]
 
-    for value in ("INV-0001", "ORD-0001", "2026-01-16", "2026-02-15", "157.50", "paid", "2026-01-20"):
+    for value in (
+        "INV-0001",
+        "ORD-0001",
+        "2026-01-16",
+        "2026-02-15",
+        "157.50",
+        "paid",
+        "2026-01-20",
+    ):
         assert value in chunk.text
 
 

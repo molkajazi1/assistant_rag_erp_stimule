@@ -25,7 +25,9 @@ def _write_csv(records: Iterable[BaseModel], path: Path) -> None:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for record in records:
-            row = {key: ("" if value is None else value) for key, value in record.model_dump().items()}
+            row = {
+                key: ("" if value is None else value) for key, value in record.model_dump().items()
+            }
             writer.writerow(row)
 
 
