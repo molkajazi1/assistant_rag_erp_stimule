@@ -13,7 +13,7 @@ from typing import TypeVar
 from pydantic import BaseModel
 
 from erp_rag.corpus.schema import Customer, Invoice, Order, OrderLineItem, Product
-from erp_rag.ingestion.chunking import Record
+from erp_rag.ingestion.chunking import Chunk, Record, get_chunking_strategy
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "raw"
 
@@ -54,6 +54,16 @@ def load_records(data_dir: Path = DEFAULT_DATA_DIR) -> list[Record]:
     for filename, model in CORPUS_FILES.items():
         records.extend(load_table(data_dir / filename, model))
     return records
+
+
+def load_chunks(strategy: str, data_dir: Path = DEFAULT_DATA_DIR) -> list[Chunk]:
+    """Load the corpus and chunk it with the strategy named `strategy`.
+
+    The single entry point later stages (build_index.py, run_eval.py) call, so
+    switching strategy is a change of string, not of code.
+    """
+    chunk = get_chunking_strategy(strategy)  # validate the name before reading any file
+    return chunk(load_records(data_dir))
 
 
 def _empty_cells_to_none(row: dict[str, str]) -> dict[str, str | None]:

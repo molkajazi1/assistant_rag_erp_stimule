@@ -1,6 +1,8 @@
 from datetime import date
 from decimal import Decimal
 
+import pytest
+
 from erp_rag.corpus.schema import (
     Customer,
     Invoice,
@@ -11,8 +13,10 @@ from erp_rag.corpus.schema import (
     Product,
 )
 from erp_rag.ingestion.chunking import (
+    CHUNKING_STRATEGIES,
     Chunk,
     fixed_size_chunk,
+    get_chunking_strategy,
     hierarchical_chunk,
     record_level_chunk,
 )
@@ -264,3 +268,27 @@ def test_hierarchical_chunk_orphan_line_item_falls_back_instead_of_dropped():
 
     assert len(chunks) == 1
     assert chunks[0].source_ids == ["OLI-9999"]
+
+
+# --- Strategy registry --------------------------------------------------------
+
+
+def test_registry_lists_the_three_benchmarked_strategies():
+    assert set(CHUNKING_STRATEGIES) == {"fixed_size", "record_level", "hierarchical"}
+
+
+@pytest.mark.parametrize("name", list(CHUNKING_STRATEGIES))
+def test_registry_name_matches_the_strategy_tag_on_its_chunks(name):
+    """The name used to pick a strategy and the name stamped on its output must
+    agree, or benchmark results would be attributed to the wrong strategy."""
+    chunks = get_chunking_strategy(name)([CUSTOMER_1, CUSTOMER_2])
+
+    assert chunks
+    assert all(chunk.strategy == name for chunk in chunks)
+
+
+def test_get_chunking_strategy_rejects_unknown_name_and_lists_valid_ones():
+    with pytest.raises(ValueError, match="hierarchichal") as error:
+        get_chunking_strategy("hierarchichal")
+
+    assert "record_level" in str(error.value)

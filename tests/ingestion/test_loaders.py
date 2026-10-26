@@ -7,7 +7,8 @@ from erp_rag.corpus.generate_order_line_items import generate_order_line_items
 from erp_rag.corpus.generate_orders import generate_orders
 from erp_rag.corpus.generate_products import generate_products
 from erp_rag.corpus.schema import Customer, Invoice, InvoiceStatus
-from erp_rag.ingestion.loaders import load_records, load_table
+from erp_rag.ingestion.chunking import record_level_chunk
+from erp_rag.ingestion.loaders import load_chunks, load_records, load_table
 
 
 def test_load_records_round_trips_the_committed_corpus():
@@ -55,3 +56,14 @@ def test_load_table_rejects_a_row_that_breaks_the_schema(tmp_path):
 def test_load_table_missing_file_points_to_build_script(tmp_path):
     with pytest.raises(FileNotFoundError, match="build_corpus.py"):
         load_table(tmp_path / "customers.csv", Customer)
+
+
+def test_load_chunks_runs_the_named_strategy_on_the_loaded_corpus():
+    assert load_chunks("record_level") == record_level_chunk(load_records())
+
+
+def test_load_chunks_checks_the_name_before_touching_any_file(tmp_path):
+    """An empty directory would raise FileNotFoundError; getting ValueError
+    instead proves a typo is reported first, as the real problem."""
+    with pytest.raises(ValueError, match="Unknown chunking strategy"):
+        load_chunks("hierarchichal", data_dir=tmp_path)

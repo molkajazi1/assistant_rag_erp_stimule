@@ -5,6 +5,8 @@ loaders.py handles reading data/raw/, this module only transforms records
 already in memory.
 """
 
+from collections.abc import Callable
+
 from pydantic import BaseModel
 
 from erp_rag.corpus.schema import Customer, Invoice, Order, OrderLineItem, Product
@@ -140,6 +142,28 @@ def hierarchical_chunk(records: list[Record]) -> list[Chunk]:
             )
 
     return chunks
+
+
+ChunkingStrategy = Callable[[list[Record]], list[Chunk]]
+
+# Name -> strategy, so a strategy can be chosen by a plain string (CLI flag,
+# config file, or a benchmark loop over every name) instead of by editing code.
+# Each key is the same string the strategy stamps on Chunk.strategy.
+CHUNKING_STRATEGIES: dict[str, ChunkingStrategy] = {
+    "fixed_size": fixed_size_chunk,
+    "record_level": record_level_chunk,
+    "hierarchical": hierarchical_chunk,
+}
+
+
+def get_chunking_strategy(name: str) -> ChunkingStrategy:
+    """Look a strategy up by name, failing loudly on an unknown one (e.g. a typo
+    in a config value) rather than silently falling back to a default."""
+    try:
+        return CHUNKING_STRATEGIES[name]
+    except KeyError:
+        valid = ", ".join(CHUNKING_STRATEGIES)
+        raise ValueError(f"Unknown chunking strategy {name!r}. Valid names: {valid}.") from None
 
 
 def _render_line_item_with_order_context(
