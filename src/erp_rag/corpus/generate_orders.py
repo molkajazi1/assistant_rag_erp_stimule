@@ -1,18 +1,25 @@
 """Generate synthetic order records for the ERP corpus."""
 
+from datetime import date, timedelta
+
 from faker import Faker
 
-from erp_rag.corpus.schema import Customer, Order, OrderStatus
+from erp_rag.corpus.schema import CORPUS_REFERENCE_DATE, Customer, Order, OrderStatus
 
 DEFAULT_COUNT = 300
 DEFAULT_SEED = 42
+ORDER_HISTORY_DAYS = 366  # same window as Faker's "-1y" (365.24 days, applied to a date)
 
 
 def generate_orders(
-    customers: list[Customer], count: int = DEFAULT_COUNT, seed: int = DEFAULT_SEED
+    customers: list[Customer],
+    count: int = DEFAULT_COUNT,
+    seed: int = DEFAULT_SEED,
+    as_of: date = CORPUS_REFERENCE_DATE,
 ) -> list[Order]:
     Faker.seed(seed)
     fake = Faker("en_US")
+    history_start = as_of - timedelta(days=ORDER_HISTORY_DAYS)
 
     orders = []
     for i in range(1, count + 1):
@@ -20,7 +27,7 @@ def generate_orders(
         order = Order(
             id=f"ORD-{i:04d}",
             customer_id=customer.id,
-            order_date=fake.date_between(start_date="-1y", end_date="today"),
+            order_date=fake.date_between(start_date=history_start, end_date=as_of),
             status=fake.random_element(elements=list(OrderStatus)),
         )
         orders.append(order)

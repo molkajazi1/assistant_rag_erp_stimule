@@ -12,6 +12,12 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+# "Today" inside the synthetic ERP world: every date-relative value (order date
+# range, invoice overdue status) is computed against this, never the real clock,
+# so the corpus is identical whatever day it's built. 2026-10-22 is the day the
+# committed data/raw/ snapshot was generated. See ARCHITECTURE.md §4b.
+CORPUS_REFERENCE_DATE = date(2026, 10, 22)
+
 
 class OrderStatus(StrEnum):
     PENDING = "pending"
