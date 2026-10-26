@@ -3,8 +3,14 @@ from datetime import date, timedelta
 import pytest
 
 from erp_rag.corpus.generate_customers import generate_customers
-from erp_rag.corpus.generate_orders import ORDER_HISTORY_DAYS, generate_orders
-from erp_rag.corpus.schema import CORPUS_REFERENCE_DATE, Order
+from erp_rag.corpus.generate_orders import (
+    CONFIRMED_AFTER_DAYS,
+    DELIVERED_AFTER_DAYS,
+    ORDER_HISTORY_DAYS,
+    SHIPPED_AFTER_DAYS,
+    generate_orders,
+)
+from erp_rag.corpus.schema import CORPUS_REFERENCE_DATE, Order, OrderStatus
 
 
 @pytest.fixture
@@ -51,3 +57,22 @@ def test_generate_orders_dates_fall_in_the_year_before_as_of(sample_customers, a
     history_start = as_of - timedelta(days=ORDER_HISTORY_DAYS)
 
     assert all(history_start <= order.order_date <= as_of for order in orders)
+
+
+def test_generate_orders_status_follows_order_age(sample_customers):
+    """Non-cancelled status is fully determined by how old the order is on as_of,
+    so it can never contradict invoicing (orders are invoiced when they ship)."""
+    orders = generate_orders(sample_customers, count=300, seed=1)
+
+    for order in orders:
+        if order.status == OrderStatus.CANCELLED:
+            continue
+        age_days = (CORPUS_REFERENCE_DATE - order.order_date).days
+        if age_days >= DELIVERED_AFTER_DAYS:
+            assert order.status == OrderStatus.DELIVERED
+        elif age_days >= SHIPPED_AFTER_DAYS:
+            assert order.status == OrderStatus.SHIPPED
+        elif age_days >= CONFIRMED_AFTER_DAYS:
+            assert order.status == OrderStatus.CONFIRMED
+        else:
+            assert order.status == OrderStatus.PENDING

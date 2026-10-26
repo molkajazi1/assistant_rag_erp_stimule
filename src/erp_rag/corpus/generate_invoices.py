@@ -5,17 +5,25 @@ from decimal import Decimal
 
 from faker import Faker
 
+from erp_rag.corpus.generate_orders import SHIPPED_AFTER_DAYS
 from erp_rag.corpus.schema import (
     CORPUS_REFERENCE_DATE,
     Invoice,
     InvoiceStatus,
     Order,
     OrderLineItem,
+    OrderStatus,
 )
 
 DEFAULT_SEED = 42
 PAYMENT_TERMS_DAYS = 30
-PAID_PROBABILITY = 65  # percent chance an invoice has already been paid
+PAID_PROBABILITY = 65  # percent chance the customer pays at all
+MAX_PAYMENT_DELAY_DAYS = 40
+
+# An order is invoiced when it ships: pending, confirmed and cancelled orders have
+# no invoice. The invoice is issued at most SHIPPED_AFTER_DAYS after the order, and
+# only orders at least that old have shipped, so no invoice is dated after as_of.
+INVOICED_ORDER_STATUSES = {OrderStatus.SHIPPED, OrderStatus.DELIVERED}
 
 
 def _order_amount(order: Order, line_items: list[OrderLineItem]) -> Decimal:
@@ -34,20 +42,25 @@ def generate_invoices(
     Faker.seed(seed)
     fake = Faker("en_US")
 
-    invoices = []
-    for i, order in enumerate(orders, start=1):
-        invoice_date = order.order_date + timedelta(days=fake.random_int(min=0, max=7))
-        due_date = invoice_date + timedelta(days=PAYMENT_TERMS_DAYS)
+    invoiced_orders = [order for order in orders if order.status in INVOICED_ORDER_STATUSES]
 
-        if fake.boolean(chance_of_getting_true=PAID_PROBABILITY):
+    invoices = []
+    for i, order in enumerate(invoiced_orders, start=1):
+        invoice_date = order.order_date + timedelta(
+            days=fake.random_int(min=0, max=SHIPPED_AFTER_DAYS)
+        )
+        due_date = invoice_date + timedelta(days=PAYMENT_TERMS_DAYS)
+        will_pay = fake.boolean(chance_of_getting_true=PAID_PROBABILITY)
+        payment_date = invoice_date + timedelta(
+            days=fake.random_int(min=1, max=MAX_PAYMENT_DELAY_DAYS)
+        )
+
+        # A payment dated after as_of hasn't happened yet: the invoice is still open.
+        if will_pay and payment_date <= as_of:
             status = InvoiceStatus.PAID
-            payment_date = invoice_date + timedelta(days=fake.random_int(min=1, max=40))
-        elif due_date < as_of:
-            status = InvoiceStatus.OVERDUE
-            payment_date = None
         else:
-            status = InvoiceStatus.PENDING
             payment_date = None
+            status = InvoiceStatus.OVERDUE if due_date < as_of else InvoiceStatus.PENDING
 
         invoice = Invoice(
             id=f"INV-{i:04d}",

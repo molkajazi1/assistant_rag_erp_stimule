@@ -9,13 +9,15 @@ from erp_rag.corpus.generate_invoices import generate_invoices
 from erp_rag.corpus.generate_order_line_items import generate_order_line_items
 from erp_rag.corpus.generate_orders import generate_orders
 from erp_rag.corpus.generate_products import generate_products
-from erp_rag.corpus.schema import CORPUS_REFERENCE_DATE, Invoice, InvoiceStatus
+from erp_rag.corpus.schema import CORPUS_REFERENCE_DATE, Invoice, InvoiceStatus, OrderStatus
 
 
 @pytest.fixture
 def sample_orders():
+    # Enough orders that every lifecycle status shows up (pending/confirmed/shipped
+    # orders are the few placed in the last two weeks before as_of).
     customers = generate_customers(count=10, seed=1)
-    return generate_orders(customers, count=10, seed=1)
+    return generate_orders(customers, count=200, seed=1)
 
 
 @pytest.fixture
@@ -31,10 +33,30 @@ def test_generate_invoices_is_deterministic(sample_orders, sample_line_items):
     assert first_run == second_run
 
 
-def test_generate_invoices_one_per_order(sample_orders, sample_line_items):
+def test_generate_invoices_one_per_shipped_or_delivered_order(sample_orders, sample_line_items):
+    """Invoiced at shipment: pending, confirmed and cancelled orders get no invoice."""
+    invoices = generate_invoices(sample_orders, sample_line_items, seed=1)
+    invoiced_order_ids = [invoice.order_id for invoice in invoices]
+    shipped_order_ids = [
+        order.id
+        for order in sample_orders
+        if order.status in {OrderStatus.SHIPPED, OrderStatus.DELIVERED}
+    ]
+
+    assert invoiced_order_ids == shipped_order_ids
+    assert any(order.status == OrderStatus.CANCELLED for order in sample_orders)
+
+
+def test_generate_invoices_nothing_is_dated_after_as_of(sample_orders, sample_line_items):
+    """No invoice issued, and no payment made, in the future."""
     invoices = generate_invoices(sample_orders, sample_line_items, seed=1)
 
-    assert len(invoices) == len(sample_orders)
+    assert all(invoice.invoice_date <= CORPUS_REFERENCE_DATE for invoice in invoices)
+    assert all(
+        invoice.payment_date <= CORPUS_REFERENCE_DATE
+        for invoice in invoices
+        if invoice.payment_date is not None
+    )
 
 
 def test_generate_invoices_returns_valid_invoices(sample_orders, sample_line_items):
