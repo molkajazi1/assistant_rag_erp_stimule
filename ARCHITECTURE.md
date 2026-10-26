@@ -96,6 +96,19 @@ Chunking, embedding model, and reranker model are **all** decided this way, not 
 
 These are placeholder files for now (pre-development) — they get filled in once the golden dataset and indices exist to actually run the comparisons. Don't skip straight to "pick the obvious-looking option" during implementation; the placeholder existing is a reminder to run the benchmark first.
 
+## 4b. Time and data freshness: evaluation vs. the real product
+
+Two different requirements that must not be confused:
+
+- **Evaluation needs a frozen world.** The synthetic corpus is deterministic: same seed + same reference date → identical CSVs, on any day the build runs. The reference date (`CORPUS_REFERENCE_DATE`, 2026-10-22, the day the committed snapshot was generated) plays the role of "today" for the fictional company, so date-relative facts (order dates within "the last 12 months", invoice `overdue` status) don't drift with the calendar. Without it, golden dataset answers go stale on their own, and a benchmark delta mixes "the pipeline changed" with "the calendar moved" — the exact confound §4a exists to avoid.
+- **The real product needs a live world.** Deployed against a real ERP there is no generator: records are created and updated constantly, and "today" is the real clock. The deterministic corpus is a measurement fixture, not a model of production behavior.
+
+Design rules that follow from this:
+
+1. **No hidden clock.** No pipeline component calls `datetime.now()` / `date.today()` directly. The current date is an explicit `as_of` input: the fixed reference date in evaluation, the real date in production. This applies to the corpus generator (Phase 1) and to the agent (Phase 7) — time-relative questions ("which invoices are overdue?") are resolved against `as_of`, never against a date frozen into the code.
+2. **Time-dependent facts are derived at query time where possible.** A stored status like `overdue` is only true as of the moment it was written. In production it should be computed from `due_date`, `payment_date` and `as_of` (e.g. by the aggregation/filter tools), not trusted from the indexed chunk text, which goes stale as soon as the date moves. In the synthetic corpus the stored status is consistent with the reference date, so evaluation is unaffected.
+3. **Indexes must be updatable, not only rebuildable.** Chunks keep their source record ID(s) as stable IDs, so a new or changed record can be upserted into Chroma without a full rebuild. `rank_bm25` has no incremental update, so for BM25 "update" means a rebuild from the chunk store — cheap at this corpus size. Full ERP sync is a product concern beyond the portfolio's core scope; Phase 14 demonstrates it with a simulated "live" mode, kept separate from the frozen evaluation corpus.
+
 ## 5. Project structure
 
 ```
@@ -138,3 +151,4 @@ assistant-rag-erp-simule/
 - Exact golden dataset size and query-type taxonomy (lookup / filter / aggregation / multi-hop) — draft this before building the agent, not after, so the agent's tool set is designed to answer real eval questions.
 - Whether the BM25 index is rebuilt per chunking-strategy comparison or only for the final chosen strategy (rebuilding for all keeps the ablation fair; decide once corpus size is known).
 - Langfuse self-host (docker-compose) vs. free cloud tier — self-host is more reproducible for reviewers, cloud tier is faster to set up. Default to self-host unless it proves to be friction during setup.
+- How the "live" mode refreshes the indexes (§4b): what triggers it (on-demand API endpoint vs. schedule) and how new/changed records are simulated. Decide in Phase 14.

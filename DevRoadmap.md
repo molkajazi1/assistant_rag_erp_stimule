@@ -23,6 +23,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 | **Containerization (Docker)** | Packaging the app + Chroma + Langfuse for reproducible local/remote runs | Phase 14 | Only worth doing once there's a full pipeline to package, not per-component. |
 | **CD (deployment)** | Getting a running instance reachable outside your machine | Phase 15 | Last, deliberately — a deploy target decided too early constrains earlier choices for no benefit. |
 | **Guardrails / red teaming** | Input/output safety checks, adversarial test set | Phases 8, 10 | After generation exists (nothing to guard before there's an output), before the eval harness closes (red team results feed the before/after report). |
+| **Time & data freshness** | A fixed `as_of` date for evaluation (frozen corpus); the real date plus index updates for the product (live data) — see ARCHITECTURE.md §4b | Phase 1 (corpus), Phase 7 (agent), Phase 14 (live mode) | Determinism is needed from the very first benchmark; liveness only matters once there's a product to demo. |
 | **Observability** | Tracing every pipeline stage via Langfuse | Phase 11 | Wired in once there's a full pipeline worth tracing end-to-end, but *before* the eval harness runs at scale — you want traces while you're generating your first real numbers, not retrofitted after. |
 
 ---
@@ -63,10 +64,12 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 - `src/erp_rag/corpus/schema.py` — define the record shapes (invoice, stock item, order) as dataclasses/Pydantic models.
 - `src/erp_rag/corpus/generate_*.py` — one generator per entity type, **seeded** (`Faker.seed(...)`) so runs are reproducible.
 - Output to `data/raw/` as CSV or JSON per entity.
+- **No hidden clock:** every date-relative value (order dates within "the last 12 months", invoice `overdue` vs. `pending`) is computed against a fixed `CORPUS_REFERENCE_DATE`, passed in as an `as_of` parameter with that default — never `datetime.now()` or Faker's `"today"`. The seed only fixes the random choices; it can't fix the calendar. See ARCHITECTURE.md §4b. *(Added after the first snapshot: the original generators read the real clock, so rebuilding on a different day shifted every order/invoice date and flipped invoice statuses.)*
 - Decide corpus size now (rough order of magnitude — hundreds of records, not tens or tens-of-thousands) so later phases aren't blocked on "how much data is there."
 
 **Tests to add (unit):**
 - Given a fixed seed, generator output is identical across runs.
+- Clock independence: with the system clock mocked to two different days, generator output is still identical. The same-seed test above can't catch a clock dependency on its own, since both of its runs happen on the same day.
 - Schema validation: every generated record satisfies its Pydantic model (catches a broken Faker provider immediately).
 - Referential sanity: order line items reference stock items that exist, invoices reference orders that exist (structural, not business-logic correctness).
 
@@ -76,7 +79,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 - Resist the urge to make the corpus "interesting" with hand-crafted edge cases yet — get the boring, structurally valid version working first. Edge cases (late invoices, out-of-stock items) can be layered in once you know what your golden dataset actually needs to query for (see Phase 3).
 - Keep entity relationships (customer → orders → invoices → stock) consistent; a corpus with dangling references will quietly break retrieval later and be confusing to debug.
 
-**Done when:** `poetry run python scripts/build_corpus.py` deterministically produces `data/raw/*.csv` and the unit tests above pass in CI.
+**Done when:** `poetry run python scripts/build_corpus.py` deterministically produces `data/raw/*.csv` — identical on whatever day it's run — and the unit tests above pass in CI.
 
 ---
 
@@ -141,6 +144,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 **Advice:**
 - Keep the scratch-embedding decision loud and visible (a comment, a config default clearly labeled `# provisional, see Phase 5`) — it's easy to forget this was never meant to be final and accidentally ship it as such.
 - A sequential ablation (chunking, then embedding, then reranker, each holding the others fixed) is not the same as a full grid search — cheaper, but it means the chosen chunking strategy is only optimal *given* the scratch embedding, not proven optimal overall. Worth a one-line caveat in the benchmark report itself.
+- Use the source record ID(s) as the chunk ID in both indexes. It costs nothing now, and it's what later lets a single new or changed record be updated in place (Phase 14 live mode) instead of rebuilding everything — see ARCHITECTURE.md §4b.
 
 **Done when:** `eval/reports/chunking_benchmark.md` has real numbers and a recorded decision; integration test suite green in CI.
 
@@ -190,10 +194,12 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 **Tasks:**
 - `src/erp_rag/agent/graph.py` — the LangGraph state machine; `nodes.py` — individual node logic (planner, retriever call, sufficiency checker); `tools.py` — the tools the planner can invoke (hybrid retrieve, structured metadata filter, aggregate).
 - Design the tool set by walking through the Phase 3 golden dataset questions one by one — each query type should map cleanly to a tool or tool combination.
+- **Time is an input, not a hidden clock:** the graph's input state carries an explicit `as_of` date, and every time-relative question ("which invoices are overdue?", "orders from last month") is resolved against it. Evaluation passes `CORPUS_REFERENCE_DATE`; the product passes the real current date. Where possible, the filter/aggregation tools derive time-dependent facts (e.g. overdue = unpaid and `due_date < as_of`) instead of trusting a status stored in the chunk text, which goes stale in a live system. See ARCHITECTURE.md §4b.
 
 **Tests to add (integration, with mocked LLM calls):**
 - Given a mocked planner response (no real LLM call — deterministic, fast, free), assert the graph routes to the correct tool.
 - Given a mocked "insufficient context" signal, assert the graph re-plans rather than answering prematurely — this is the behavior that most easily breaks silently, worth its own explicit test.
+- Given the same question ("which invoices are overdue?") and two different `as_of` dates, assert the tools return different invoice sets — proof that time flows in as an input rather than being baked into the code or the index.
 
 **CI/CD touchpoint:** These tests must run without hitting the real Claude API (mocked) so CI stays fast and free — a good moment to introduce the unit/integration-vs-eval distinction concretely: these are integration tests (control flow correctness), not eval tests (answer quality), and they should never need an API key.
 
@@ -234,7 +240,7 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 - Expand `qa_pairs.jsonl` to a size that gives statistically meaningful before/after comparisons (aim for 75–150, proportioned across query types).
 - `eval/metrics/ragas_eval.py` — faithfulness, answer relevancy, context precision/recall.
 - `eval/metrics/llm_judge.py` — a separate Claude prompt with its own rubric (not the generator prompt reused) grading correctness against the actual expected answer.
-- `scripts/run_eval.py` — runs the full pipeline against the golden dataset, produces a report.
+- `scripts/run_eval.py` — runs the full pipeline against the golden dataset, produces a report. It always passes `as_of=CORPUS_REFERENCE_DATE`, so an eval run next month answers time-relative questions exactly like one today.
 
 **Tests to add:** A "does the eval harness itself work" smoke test — run it against a tiny 2-question subset and assert it produces well-formed output, without needing the full dataset or a large API bill just to verify the harness isn't broken.
 
@@ -332,9 +338,10 @@ A step-by-step path from the current state (pre-development, docs only) to a dep
 - Build a FastAPI backend (e.g. `src/erp_rag/api/`) exposing the pipeline — a `/query` endpoint (plus a `/health` check) wrapping the agent's single-entry-point function (`answer_query()` or equivalent) discussed during the indexing/retrieval/generation design. FastAPI's automatic OpenAPI/Swagger docs (`/docs`) are a bonus here: a reviewer can exercise the API directly, no UI required, which is its own small portfolio artifact.
 - Build a thin UI — Streamlit remains the pragmatic default for the chat interface — that calls the FastAPI backend **over HTTP**, not by importing pipeline functions in-process. This is the one real architecture shift from the original plan: UI and pipeline become two separate processes talking over the API, rather than one monolithic Streamlit script.
 - `docker-compose.yml` bringing up: the API container, the UI container, Langfuse (from Phase 11), and Chroma's persistence volume.
+- **Live mode (data freshness):** a real ERP assistant works on data that changes every day, so the demo should show the pipeline handling that, not only the frozen eval corpus. `/query` takes an `as_of` date that defaults to the real current date. Add a refresh path (an API endpoint or a `poetry run` script — open decision, see ARCHITECTURE.md §6) that simulates the ERP moving forward (new orders, invoices getting paid or becoming overdue) and updates the indexes: upsert changed/new chunks by record ID in Chroma, rebuild BM25 (`rank_bm25` has no incremental update; cheap at this size). The frozen evaluation corpus stays untouched — live mode works on its own copy.
 - A single documented command (`make demo` or a `poetry run` script) — this is the thing a reviewer actually runs, so it needs to work on a clean clone with nothing but Docker and an API key.
 
-**Tests to add:** API-level tests using FastAPI's `TestClient` (hit `/query` with a known question, assert a well-formed response) alongside a container smoke test — the compose stack comes up healthy and both the API and UI respond to a trivial request.
+**Tests to add:** API-level tests using FastAPI's `TestClient` (hit `/query` with a known question, assert a well-formed response) alongside a container smoke test — the compose stack comes up healthy and both the API and UI respond to a trivial request. For live mode: after a refresh that adds a new record, a query about that record finds it, and the frozen evaluation corpus is unchanged.
 
 **CI/CD touchpoint:** Optional CI job building both Docker images (API + UI) on every push to `main`, catching "works on my machine" packaging drift early.
 
