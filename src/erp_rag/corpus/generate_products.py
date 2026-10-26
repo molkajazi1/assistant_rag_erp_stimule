@@ -60,7 +60,9 @@ def generate_products(count: int = DEFAULT_COUNT, seed: int = DEFAULT_SEED) -> l
         category = fake.random_element(elements=list(CATEGORIES))
         name = fake.random_element(elements=CATEGORIES[category])
         brand = fake.company()
-        price = Decimal(str(fake.pyfloat(min_value=5, max_value=500, right_digits=2, positive=True)))
+        price = Decimal(
+            str(fake.pyfloat(min_value=5, max_value=500, right_digits=2, positive=True))
+        )
 
         product = Product(
             id=f"PROD-{i:04d}",

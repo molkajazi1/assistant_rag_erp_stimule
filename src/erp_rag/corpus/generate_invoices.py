@@ -1,11 +1,17 @@
 """Generate synthetic invoice records for the ERP corpus."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 from faker import Faker
 
-from erp_rag.corpus.schema import Invoice, InvoiceStatus, Order, OrderLineItem
+from erp_rag.corpus.schema import (
+    CORPUS_REFERENCE_DATE,
+    Invoice,
+    InvoiceStatus,
+    Order,
+    OrderLineItem,
+)
 
 DEFAULT_SEED = 42
 PAYMENT_TERMS_DAYS = 30
@@ -20,7 +26,10 @@ def _order_amount(order: Order, line_items: list[OrderLineItem]) -> Decimal:
 
 
 def generate_invoices(
-    orders: list[Order], line_items: list[OrderLineItem], seed: int = DEFAULT_SEED
+    orders: list[Order],
+    line_items: list[OrderLineItem],
+    seed: int = DEFAULT_SEED,
+    as_of: date = CORPUS_REFERENCE_DATE,
 ) -> list[Invoice]:
     Faker.seed(seed)
     fake = Faker("en_US")
@@ -33,7 +42,7 @@ def generate_invoices(
         if fake.boolean(chance_of_getting_true=PAID_PROBABILITY):
             status = InvoiceStatus.PAID
             payment_date = invoice_date + timedelta(days=fake.random_int(min=1, max=40))
-        elif due_date < datetime.now(tz=UTC).date():
+        elif due_date < as_of:
             status = InvoiceStatus.OVERDUE
             payment_date = None
         else:

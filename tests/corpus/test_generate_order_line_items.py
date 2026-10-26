@@ -50,7 +50,9 @@ def test_generate_order_line_items_ids_are_unique(sample_orders, sample_products
     assert len(ids) == len(set(ids))
 
 
-def test_generate_order_line_items_reference_real_orders_and_products(sample_orders, sample_products):
+def test_generate_order_line_items_reference_real_orders_and_products(
+    sample_orders, sample_products
+):
     line_items = generate_order_line_items(sample_orders, sample_products, seed=1)
     valid_order_ids = {order.id for order in sample_orders}
     valid_product_ids = {product.id for product in sample_products}

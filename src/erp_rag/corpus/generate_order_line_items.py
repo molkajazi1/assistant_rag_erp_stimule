@@ -24,7 +24,9 @@ def generate_order_line_items(
         item_count = fake.random_int(min=MIN_ITEMS_PER_ORDER, max=MAX_ITEMS_PER_ORDER)
         for _ in range(item_count):
             product = fake.random_element(elements=products)
-            variation = fake.pyfloat(min_value=-PRICE_VARIATION, max_value=PRICE_VARIATION, right_digits=4)
+            variation = fake.pyfloat(
+                min_value=-PRICE_VARIATION, max_value=PRICE_VARIATION, right_digits=4
+            )
             price_at_order_time = product.unit_price * (Decimal(1) + Decimal(str(variation)))
 
             line_item = OrderLineItem(
