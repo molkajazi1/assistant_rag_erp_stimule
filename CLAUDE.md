@@ -48,6 +48,6 @@ See ARCHITECTURE.md §5 for the full layout. Key paths:
 
 ## Current status
 
-Phases 0 (environment, CI) and 1 (synthetic corpus) are complete; Phase 2 (chunking) is in progress: the three strategies exist in `src/erp_rag/ingestion/chunking.py`, but `loaders.py` and the config-based strategy selection don't yet. Check git log / project structure for what's actually been built before trusting this note, which can go stale.
+Phases 0 (environment, CI), 1 (synthetic corpus) and 2 (chunking: three strategies selectable by name, `loaders.py`) are complete; next is Phase 3 (seed golden dataset). Progress is tracked with Status lines and checkboxes in DevRoadmap.md; open chunking findings are in `eval/reports/chunking_benchmark.md`. Check git log / project structure for what's actually been built before trusting this note, which can go stale.
 
 The corpus is deterministic by seed **and** by date: generators take an `as_of` date defaulting to `CORPUS_REFERENCE_DATE` and must never read the real clock (ARCHITECTURE.md §4b). Don't reintroduce `datetime.now()`, `date.today()` or Faker's `"today"` anywhere in the pipeline.

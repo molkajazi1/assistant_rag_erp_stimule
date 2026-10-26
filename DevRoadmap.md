@@ -2,6 +2,8 @@
 
 A step-by-step path from pre-development to a deployed, quantified RAG demo. This is a working document — update it as reality diverges from the plan (a phase turns out to be harder/easier, an order needs to change). Read alongside [ARCHITECTURE.md](ARCHITECTURE.md) (what we're building and why) and [CLAUDE.md](CLAUDE.md) (working conventions).
 
+**Progress tracking:** each phase gets a **Status** line, and its tasks become checkboxes ticked as they land — updated in the same session the work is done, checked against the repo (files exist, tests pass), not from memory.
+
 **How to read each phase:** Goal → Tasks → Tests to add → CI/CD touchpoint → Advice → Done when. The "CI/CD touchpoint" line is there deliberately — CI/CD isn't one phase, it's a thread that thickens as the project grows. Same for testing: unit tests start on day one, integration tests appear once components connect, "eval tests" (RAGAS/golden dataset) are a third category specific to ML systems.
 
 **Code style: functions vs. classes.** Default to plain functions — something with no state to hold between calls doesn't need a class wrapped around it (the Phase 1 corpus generators are the reference example: `generate_customers(count, seed) -> list[Customer]`, no class needed, nothing persists between calls). Reach for a class specifically where it's earned: real state held across calls (a loaded model, an open client connection) or real polymorphism (multiple interchangeable implementations behind one shared interface). Concretely, three pieces later in this roadmap are deliberately class-based for exactly these reasons, not as a general style choice: `indexing/vectorstore.py` (holds a persistent Chroma client connection, Phase 4), `retrieval/reranker.py` (holds a loaded CrossEncoder model — expensive to reload every call, Phase 6), and `generation/llm.py` (a genuine Strategy pattern: an `LLMProvider` base class with `ClaudeProvider`/`OpenAIProvider` subclasses, directly motivated by the swappable-provider requirement, Phase 8). Everything else — chunking, RRF fusion, the LangGraph node functions in Phase 7 — stays as plain functions, since forcing a class around a stateless transform adds ceremony without adding anything a function doesn't already do.
@@ -30,18 +32,20 @@ A step-by-step path from pre-development to a deployed, quantified RAG demo. Thi
 
 ## Phase 0 — Environment, Git/GitHub, and hands-on CI
 
+**Status:** ✅ Done (2026-10-26). Remaining by hand: click "Run workflow" once in the Actions tab (kata step 5).
+
 **Goal:** A working dev environment, a Git workflow you'll actually stick to, and enough real, hands-on GitHub Actions experience that the concepts stop being abstract.
 
 **Tasks:**
-- `poetry init` + `pyproject.toml`, add `ruff` (lint+format) and `pytest` as dev dependencies.
-- Adopt a lightweight branching habit: `main` stays green, work happens on `feature/*` branches, merge via PR even solo — this is what makes CI meaningful (a PR is a natural point to run checks before it hits `main`).
-- **Hands-on CI kata** (do this before writing any pipeline code):
-  1. Create `.github/workflows/ci.yml` with one job: checkout → setup-python → `poetry install` → `poetry run ruff check .`.
-  2. Push it on a branch, open a PR, watch it run in the Actions tab. Read the raw logs, not just the pass/fail icon.
-  3. Break it on purpose — introduce a lint error, push, watch it go red, read *why* GitHub shows it failed on that exact line.
-  4. Fix it, push again, watch it go green. Now add a second step (`ruff format --check .`) and repeat once.
-  5. Add `workflow_dispatch` as a trigger and manually run it from the Actions tab UI, so "trigger" stops being an abstract word.
-- Write `.env.example` listing every secret the project will eventually need (`ANTHROPIC_API_KEY`, Langfuse keys) — even before they're used, so the shape of config is visible from day one.
+- [x] `poetry init` + `pyproject.toml`, add `ruff` (lint+format) and `pytest` as dev dependencies. *(ruff `line-length = 100`.)*
+- [x] Adopt a lightweight branching habit: `main` stays green, work happens on `feature/*` branches, merge via PR even solo — this is what makes CI meaningful (a PR is a natural point to run checks before it hits `main`).
+- [x] **Hands-on CI kata** (do this before writing any pipeline code):
+  1. [x] Create `.github/workflows/ci.yml` with one job: checkout → setup-python → `poetry install` → `poetry run ruff check .`.
+  2. [x] Push it on a branch, open a PR, watch it run in the Actions tab. Read the raw logs, not just the pass/fail icon.
+  3. [x] Break it on purpose — introduce a lint error, push, watch it go red, read *why* GitHub shows it failed on that exact line.
+  4. [x] Fix it, push again, watch it go green. Now add a second step (`ruff format --check .`) and repeat once.
+  5. [x] Add `workflow_dispatch` as a trigger and manually run it from the Actions tab UI, so "trigger" stops being an abstract word. *(Trigger added; manual run still to do.)*
+- [x] Write `.env.example` listing every secret the project will eventually need (`ANTHROPIC_API_KEY`, Langfuse keys) — even before they're used, so the shape of config is visible from day one.
 
 **Tests to add:** None yet — nothing to test. That's fine; CI running with zero tests still validates the *pipeline itself* works.
 
@@ -58,20 +62,24 @@ A step-by-step path from pre-development to a deployed, quantified RAG demo. Thi
 
 ## Phase 1 — Synthetic ERP corpus generation
 
+**Status:** ✅ Done (2026-10-26). Corpus: 50 customers, 150 products, 300 orders, 605 line items, 264 invoices; rebuild verified byte-identical on any day; order and invoice statuses consistent.
+
 **Goal:** Deterministic, realistic-looking invoices/stock/orders data, generated by Faker, with no real ERP data anywhere.
 
 **Tasks:**
-- `src/erp_rag/corpus/schema.py` — define the record shapes (invoice, stock item, order) as dataclasses/Pydantic models.
-- `src/erp_rag/corpus/generate_*.py` — one generator per entity type, **seeded** (`Faker.seed(...)`) so runs are reproducible.
-- Output to `data/raw/` as CSV or JSON per entity.
-- **No hidden clock:** every date-relative value (order dates within "the last 12 months", invoice `overdue` vs. `pending`) is computed against a fixed `CORPUS_REFERENCE_DATE`, passed in as an `as_of` parameter with that default — never `datetime.now()` or Faker's `"today"`. The seed only fixes the random choices; it can't fix the calendar. See ARCHITECTURE.md §4b. *(Added after the first snapshot: the original generators read the real clock, so rebuilding on a different day shifted every order/invoice date and flipped invoice statuses.)*
-- Decide corpus size now (rough order of magnitude — hundreds of records, not tens or tens-of-thousands) so later phases aren't blocked on "how much data is there."
+- [x] `src/erp_rag/corpus/schema.py` — define the record shapes (invoice, stock item, order) as dataclasses/Pydantic models.
+- [x] `src/erp_rag/corpus/generate_*.py` — one generator per entity type, **seeded** (`Faker.seed(...)`) so runs are reproducible.
+- [x] Output to `data/raw/` as CSV or JSON per entity.
+- [x] **No hidden clock:** every date-relative value (order dates within "the last 12 months", invoice `overdue` vs. `pending`) is computed against a fixed `CORPUS_REFERENCE_DATE`, passed in as an `as_of` parameter with that default — never `datetime.now()` or Faker's `"today"`. The seed only fixes the random choices; it can't fix the calendar. See ARCHITECTURE.md §4b. *(Added after the first snapshot: the original generators read the real clock, so rebuilding on a different day shifted every order/invoice date and flipped invoice statuses.)*
+- [x] **Consistent order lifecycle** *(added after the Phase 2 spot check)*: order status follows the order's age on `as_of` (pending → confirmed → shipped → delivered, or cancelled), and only shipped/delivered orders get an invoice — no invoiced cancelled order, no invoice or payment dated after `as_of`. Random, independent statuses had produced facts with no single correct answer, which the golden dataset (Phase 3) can't be built on.
+- [x] Decide corpus size now (rough order of magnitude — hundreds of records, not tens or tens-of-thousands) so later phases aren't blocked on "how much data is there."
 
 **Tests to add (unit):**
 - Given a fixed seed, generator output is identical across runs.
 - Clock independence: with the system clock mocked to two different days, generator output is still identical. The same-seed test above can't catch a clock dependency on its own, since both of its runs happen on the same day.
 - Schema validation: every generated record satisfies its Pydantic model (catches a broken Faker provider immediately).
 - Referential sanity: order line items reference stock items that exist, invoices reference orders that exist (structural, not business-logic correctness).
+- Lifecycle consistency: non-cancelled order status matches the order's age; exactly the shipped/delivered orders are invoiced; nothing is dated after `as_of`.
 
 **CI/CD touchpoint:** These are the first real tests in the suite — CI graduates from "lint only" to "lint + pytest."
 
@@ -85,11 +93,14 @@ A step-by-step path from pre-development to a deployed, quantified RAG demo. Thi
 
 ## Phase 2 — Chunking strategies (implementation)
 
+**Status:** ✅ Done (2026-10-26). Spot-check findings and open questions recorded in [eval/reports/chunking_benchmark.md](eval/reports/chunking_benchmark.md) ("Implementation notes").
+
 **Goal:** All three chunking strategies from ARCHITECTURE.md §4 implemented as swappable functions — not yet benchmarked, not yet chosen. (A fourth, semantic/embedding-breakpoint chunking, was considered and deliberately dropped — see ARCHITECTURE.md §4 for the reasoning: it's a poor fit for FK-structured data with no real free-text/topical content.)
 
 **Tasks:**
-- `src/erp_rag/ingestion/chunking.py` — one function per strategy, common interface (`list[Record] -> list[Chunk]`), each behind a config flag so `scripts/run_eval.py` can select one later.
-- `src/erp_rag/ingestion/loaders.py` — reads `data/raw/`, feeds records into whichever chunking function is active.
+- [x] `src/erp_rag/ingestion/chunking.py` — one function per strategy, common interface (`list[Record] -> list[Chunk]`), each behind a config flag so `scripts/run_eval.py` can select one later. *(Selected by name through the `CHUNKING_STRATEGIES` registry / `get_chunking_strategy()`. The config source — CLI flag, file, or a loop over all names — is decided in Phase 4, when `build_index.py` / `run_eval.py` first need it.)*
+- [x] `src/erp_rag/ingestion/loaders.py` — reads `data/raw/`, feeds records into whichever chunking function is active. *(`load_records()` validates every CSV row back into its Pydantic model; `load_chunks(strategy)` is the single entry point.)*
+- [x] Spot-check chunks by hand on the real corpus.
 
 **Tests to add (unit):**
 - Each chunking strategy, given a small fixed set of input records, produces the expected chunk boundaries and count — this is where bugs in "off by one" chunk splitting get caught before they ever touch a vector store.
@@ -107,13 +118,16 @@ A step-by-step path from pre-development to a deployed, quantified RAG demo. Thi
 
 ## Phase 3 — Draft golden dataset (seed set)
 
+**Status:** 🟡 In progress (2026-10-26). 20-question draft written, awaiting the project owner's review.
+
 **Goal:** A small (15–25 example) golden dataset early enough to make every later benchmark actually runnable — expanded to full size in Phase 9.
 
 **Tasks:**
-- `eval/golden_dataset/qa_pairs.jsonl` — each entry: question, expected answer (or expected fact), expected source record(s), and a **query-type tag**: `lookup` / `filter` / `aggregation` / `multi-hop`.
-- Cover all four query types even in this seed set, in rough proportion to what real usage would look like (per CLAUDE.md: this shapes the agent's tool design later, so don't skip a type because it's harder to write).
+- [ ] `eval/golden_dataset/qa_pairs.jsonl` — each entry: question, expected answer (or expected fact), expected source record(s), and a **query-type tag**: `lookup` / `filter` / `aggregation` / `multi-hop`. *(Draft: 20 entries, 5 per type. Process chosen: Claude Code drafts questions, every expected answer and source id is computed from `data/raw/` by code rather than written from memory, and the project owner reviews, edits or replaces each entry. Time-relative answers ("overdue", "currently") are as of `CORPUS_REFERENCE_DATE`.)*
+- [x] Cover all four query types even in this seed set, in rough proportion to what real usage would look like (per CLAUDE.md: this shapes the agent's tool design later, so don't skip a type because it's harder to write).
+- [x] Prerequisite found while drafting: make order/invoice statuses consistent first (see Phase 1, "Consistent order lifecycle") — a golden answer can't be written for contradictory data.
 
-**Tests to add:** None (this is data, not code) — but add a schema check: every entry has all required fields, every referenced source record actually exists in the Phase 1 corpus.
+**Tests to add:** None (this is data, not code) — but add a schema check: every entry has all required fields, every referenced source record actually exists in the Phase 1 corpus. *(Done: `tests/eval/test_golden_dataset.py` — required fields, non-empty values, unique ids, valid query types with all four covered, every source id exists in the corpus.)*
 
 **CI/CD touchpoint:** The schema check above runs in CI as a data-validation test — a category distinct from both unit and integration tests, worth naming as such.
 

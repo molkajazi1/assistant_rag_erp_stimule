@@ -6,7 +6,7 @@ A measurable project: beyond the RAG pipeline itself (chunking, hybrid search, r
 
 ## Status
 
-In development. Phases 0 (environment, CI) and 1 (synthetic corpus) are complete; Phase 2 (chunking strategies) is in progress. See [DevRoadmap.md](DevRoadmap.md) for the full phased plan.
+In development. Phases 0 (environment, CI), 1 (synthetic corpus) and 2 (chunking strategies) are complete; Phase 3 (seed golden dataset) is next. See [DevRoadmap.md](DevRoadmap.md) for the full phased plan.
 
 ## Stack
 
