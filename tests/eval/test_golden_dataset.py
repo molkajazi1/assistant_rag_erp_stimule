@@ -19,7 +19,13 @@ REQUIRED_FIELDS = {
     "expected_answer",
     "expected_source_ids",
     "ambiguous",  # several records match the question as phrased (see test_golden_answers.py)
+    # Second turn, only for ambiguous entries (null otherwise): the user's reply to the
+    # clarifying question, the final answer, and the records that answer needs.
+    "follow_up",
+    "follow_up_answer",
+    "follow_up_source_ids",
 }
+FOLLOW_UP_FIELDS = ("follow_up", "follow_up_answer", "follow_up_source_ids")
 QUERY_TYPES = {"lookup", "filter", "aggregation", "multi-hop"}
 MIN_ENTRIES = 15  # seed set size floor; Phase 9 grows it to 75-150
 
@@ -47,6 +53,14 @@ def test_every_entry_has_non_empty_question_answer_and_sources(entries):
         assert isinstance(entry["ambiguous"], bool), entry["id"]
 
 
+def test_second_turn_is_filled_exactly_for_ambiguous_entries(entries):
+    for entry in entries:
+        if entry["ambiguous"]:
+            assert all(entry[name] for name in FOLLOW_UP_FIELDS), entry["id"]
+        else:
+            assert all(entry[name] is None for name in FOLLOW_UP_FIELDS), entry["id"]
+
+
 def test_ids_are_unique(entries):
     ids = [entry["id"] for entry in entries]
 
@@ -65,5 +79,6 @@ def test_every_expected_source_id_exists_in_the_corpus(entries):
     corpus_ids = {record.id for record in load_records()}
 
     for entry in entries:
-        missing = set(entry["expected_source_ids"]) - corpus_ids
+        sources = set(entry["expected_source_ids"]) | set(entry["follow_up_source_ids"] or [])
+        missing = sources - corpus_ids
         assert not missing, f"{entry['id']}: unknown source ids {sorted(missing)}"

@@ -122,12 +122,10 @@ def q003(c: Corpus) -> Verified:
 
 
 def q004(c: Corpus) -> Verified:
+    # Ambiguous: turn 1 only needs the candidates, to see there are several and ask.
     rods = c.product("Aluminum Rod")
     assert len(rods) > 1, "only ambiguous if several products share the name"
-    total = sum(p.quantity_in_stock for p in rods)
-    facts = [f"{len(rods)} different products", f"{total} units in total"]
-    facts += [f"{p.id} by {p.brand}: {p.quantity_in_stock}" for p in rods]
-    return {p.id for p in rods}, facts
+    return {p.id for p in rods}, [f"{len(rods)} different products called Aluminum Rod"]
 
 
 def q005(c: Corpus) -> Verified:
@@ -208,16 +206,10 @@ def q012(c: Corpus) -> Verified:
 
 
 def q013(c: Corpus) -> Verified:
+    # Ambiguous: turn 1 only needs the candidate customers, not their invoices.
     lees = c.customer(r"\bLee\b")
     assert len(lees) > 1, "only ambiguous if several customers match"
-    sources: set[str] = set()
-    facts = [f"{len(lees)} customers are named Lee"]
-    for cu in lees:
-        overdue = _overdue(c, cu)
-        sources |= {cu.id} | {i.id for i in overdue} | {i.order_id for i in overdue}
-        facts.append(f"{cu.name} ({cu.id}) owes {money(sum(i.amount for i in overdue))}")
-        facts += [i.id for i in overdue]
-    return sources, facts
+    return {cu.id for cu in lees}, ["customers are named Lee"]
 
 
 def q014(c: Corpus) -> Verified:
@@ -285,6 +277,41 @@ def q020(c: Corpus) -> Verified:
 VERIFIERS = {name: fn for name, fn in globals().items() if re.fullmatch(r"q\d{3}", name)}
 
 
+# --- Ambiguous entries: clarify first, then answer (ARCHITECTURE.md §4c) ---------
+#
+# Turn 1 is a short explanation plus a clarifying question that offers a few example
+# options (never the full list unless the user asks for it). Turn 2 answers the
+# user's follow-up, and only then are the detailed records retrieved.
+
+MAX_EXAMPLE_OPTIONS = 3
+
+# All records the ambiguous wording could refer to, as the labels a user would pick from.
+CANDIDATES = {
+    "q004": lambda c: [p.brand for p in c.product("Aluminum Rod")],
+    "q013": lambda c: [cu.name for cu in c.customer(r"\bLee\b")],
+}
+
+
+def q004_follow_up(c: Corpus) -> Verified:
+    p = _unique(c.product("Aluminum Rod", "Hancock and Sons"))
+    return {p.id}, [
+        p.id,
+        f"{p.quantity_in_stock} units left",
+        f"reorder threshold of {p.reorder_threshold}",
+    ]
+
+
+def q013_follow_up(c: Corpus) -> Verified:
+    cu = _unique(c.customer(r"Charles Lee"))
+    overdue = _overdue(c, cu)
+    facts = [f"{len(overdue)} overdue invoices", money(sum(i.amount for i in overdue))]
+    facts += [i.id for i in overdue]
+    return {cu.id} | {i.id for i in overdue} | {i.order_id for i in overdue}, facts
+
+
+FOLLOW_UP_VERIFIERS = {"q004": q004_follow_up, "q013": q013_follow_up}
+
+
 def _entries() -> list[dict]:
     lines = GOLDEN_PATH.read_text(encoding="utf-8").splitlines()
     return [json.loads(line) for line in lines if line.strip()]
@@ -304,9 +331,35 @@ def test_expected_answer_is_true_against_the_corpus(entry, corpus):
     assert not missing, f"answer is missing or contradicts: {missing}"
 
 
+def test_every_ambiguous_entry_has_candidates_and_a_follow_up_verifier():
+    ambiguous_ids = {entry["id"] for entry in _entries() if entry["ambiguous"]}
+
+    assert ambiguous_ids == set(CANDIDATES) == set(FOLLOW_UP_VERIFIERS)
+
+
 @pytest.mark.parametrize("entry", _entries(), ids=lambda entry: entry["id"])
-def test_ambiguous_entries_accept_a_clarifying_question(entry):
-    """Ambiguous questions (several records match) are answered with a full report
-    over every match; asking the user to narrow it down is also correct."""
-    if entry["ambiguous"]:
-        assert "Asking which" in entry["expected_answer"]
+def test_only_ambiguous_entries_ask_a_question(entry):
+    assert ("?" in entry["expected_answer"]) == entry["ambiguous"]
+
+
+@pytest.mark.parametrize(
+    "entry", [e for e in _entries() if e["ambiguous"]], ids=lambda entry: entry["id"]
+)
+def test_clarifying_question_offers_a_few_options_not_the_full_list(entry, corpus):
+    candidates = CANDIDATES[entry["id"]](corpus)
+    offered = [label for label in candidates if label in entry["expected_answer"]]
+
+    assert offered, "the clarifying question should suggest at least one real option"
+    if len(candidates) > MAX_EXAMPLE_OPTIONS:
+        assert len(offered) <= MAX_EXAMPLE_OPTIONS, "list examples, not every option"
+
+
+@pytest.mark.parametrize(
+    "entry", [e for e in _entries() if e["ambiguous"]], ids=lambda entry: entry["id"]
+)
+def test_follow_up_answer_is_true_against_the_corpus(entry, corpus):
+    expected_sources, facts = FOLLOW_UP_VERIFIERS[entry["id"]](corpus)
+
+    assert set(entry["follow_up_source_ids"]) == expected_sources
+    missing = [fact for fact in facts if fact not in entry["follow_up_answer"]]
+    assert not missing, f"follow-up answer is missing or contradicts: {missing}"
