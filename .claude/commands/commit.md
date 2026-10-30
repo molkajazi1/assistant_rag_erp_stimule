@@ -53,4 +53,4 @@ When `/commit` is run, execute the following sequence, in order, and never skip 
 - Never use `--no-verify` or bypass a hook.
 - Never push automatically — `/commit` only commits locally.
 - If suspicious files show up in the diff (unrelated to the requested change, artifacts, personal documents), flag them before committing rather than including them by default.
-- Communicate in French, no em dashes.
+- Communicate in English, no em dashes.
