@@ -77,6 +77,7 @@ A step-by-step path from pre-development to a deployed, quantified RAG demo. Thi
 **Tests to add (unit):**
 - Given a fixed seed, generator output is identical across runs.
 - Clock independence: with the system clock mocked to two different days, generator output is still identical. The same-seed test above can't catch a clock dependency on its own, since both of its runs happen on the same day.
+- Platform independence *(added 2026-10-30, after CI failed on Linux)*: output doesn't depend on the OS. Faker's `date_between()` draws differently on Windows and Linux, so dates are drawn by our own code; a test forces Faker's other-platform path and checks orders don't change.
 - Schema validation: every generated record satisfies its Pydantic model (catches a broken Faker provider immediately).
 - Referential sanity: order line items reference stock items that exist, invoices reference orders that exist (structural, not business-logic correctness).
 - Lifecycle consistency: non-cancelled order status matches the order's age; exactly the shipped/delivered orders are invoiced; nothing is dated after `as_of`.
