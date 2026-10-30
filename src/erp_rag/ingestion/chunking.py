@@ -26,7 +26,7 @@ def fixed_size_chunk(records: list[Record], chunk_size: int = DEFAULT_CHUNK_SIZE
     """Baseline/strawman: render every record as plain text, concatenate, and
     split by word count - ignoring record boundaries entirely. A chunk can cut
     a record in half or straddle two unrelated records. This is the strategy
-    strategies 2-4 are meant to beat.
+    strategies 2-3 are meant to beat.
     """
     words: list[str] = []
     word_owner: list[str] = []  # word_owner[i] = id of the record that produced words[i]
