@@ -20,16 +20,16 @@
     </style>
   </defs>
 
-  <!-- Fond -->
+  <!-- Background -->
   <rect x="0" y="0" width="1400" height="880" rx="18" fill="#FBFCFE"/>
 
-  <!-- Titre -->
-  <text x="700" y="44" text-anchor="middle" font-size="24" font-weight="700" fill="#1F2430">Assistant RAG sur exports ERP simulés</text>
-  <text x="700" y="70" text-anchor="middle" font-size="14" fill="#5B6170">Agentic RAG · retrieval local et gratuit · génération cloud · chaque choix validé par des chiffres</text>
+  <!-- Title -->
+  <text x="700" y="44" text-anchor="middle" font-size="24" font-weight="700" fill="#1F2430">RAG Assistant on Simulated ERP Exports</text>
+  <text x="700" y="70" text-anchor="middle" font-size="14" fill="#5B6170">Agentic RAG · free local retrieval · cloud generation · every choice backed by numbers</text>
 
-  <!-- ============ LANE 1 : INDEXATION ============ -->
+  <!-- ============ LANE 1: INDEXING ============ -->
   <rect x="30" y="92" width="1340" height="170" rx="16" fill="#EAF1FD" stroke="#9DB8EC" stroke-width="1.5"/>
-  <text x="54" y="120" class="lane" fill="#3A62B0">① INDEXATION · offline, local</text>
+  <text x="54" y="120" class="lane" fill="#3A62B0">① INDEXING · offline, local</text>
 
   <g filter="url(#shadow)">
     <rect x="60" y="140" width="220" height="88" rx="12" fill="#FFFFFF" stroke="#4C78C8" stroke-width="2"/>
@@ -38,19 +38,19 @@
     <rect x="880" y="132" width="220" height="44" rx="10" fill="#DCE7FB" stroke="#4C78C8" stroke-width="2"/>
     <rect x="880" y="188" width="220" height="44" rx="10" fill="#DCE7FB" stroke="#4C78C8" stroke-width="2"/>
   </g>
-  <text x="170" y="172" text-anchor="middle" class="t">Corpus synthétique</text>
-  <text x="170" y="192" text-anchor="middle" class="s">Faker, seedé (reproductible)</text>
-  <text x="170" y="210" text-anchor="middle" class="s">factures · stock · commandes</text>
+  <text x="170" y="172" text-anchor="middle" class="t">Synthetic corpus</text>
+  <text x="170" y="192" text-anchor="middle" class="s">Faker, seeded (reproducible)</text>
+  <text x="170" y="210" text-anchor="middle" class="s">invoices · stock · orders</text>
 
   <text x="440" y="172" text-anchor="middle" class="t">Chunking</text>
   <text x="440" y="192" text-anchor="middle" class="s">fixed-size · record-level</text>
-  <text x="440" y="210" text-anchor="middle" class="s">hiérarchique · sémantique</text>
+  <text x="440" y="210" text-anchor="middle" class="s">hierarchical</text>
 
-  <text x="710" y="172" text-anchor="middle" class="t">Embedding local</text>
+  <text x="710" y="172" text-anchor="middle" class="t">Local embedding</text>
   <text x="710" y="192" text-anchor="middle" class="s">bge · e5 · MiniLM</text>
-  <text x="710" y="210" text-anchor="middle" class="s">choisi par benchmark</text>
+  <text x="710" y="210" text-anchor="middle" class="s">chosen by benchmark</text>
 
-  <text x="990" y="159" text-anchor="middle" class="t">Chroma <tspan class="s" font-weight="400">· dense + filtres</tspan></text>
+  <text x="990" y="159" text-anchor="middle" class="t">Chroma <tspan class="s" font-weight="400">· dense + filters</tspan></text>
   <text x="990" y="215" text-anchor="middle" class="t">BM25 <tspan class="s" font-weight="400">· sparse, rank_bm25</tspan></text>
 
   <rect x="1150" y="140" width="190" height="88" rx="12" fill="none" stroke="#4C78C8" stroke-width="1.5" stroke-dasharray="5 4"/>
@@ -63,37 +63,37 @@
   <path class="flow" d="M820,184 L876,156"/>
   <path class="flow" d="M820,184 L876,210"/>
 
-  <!-- ============ LANE 2 : REQUÊTE ============ -->
+  <!-- ============ LANE 2: QUERY ============ -->
   <rect x="30" y="290" width="1340" height="282" rx="16" fill="#EEF8F2" stroke="#A3D5B6" stroke-width="1.5"/>
-  <text x="54" y="318" class="lane" fill="#2E8556">② RÉPONSE À UNE QUESTION · online</text>
+  <text x="54" y="318" class="lane" fill="#2E8556">② ANSWERING A QUESTION · online</text>
 
-  <!-- Question (cercle) -->
+  <!-- Question (circle) -->
   <circle cx="95" cy="430" r="44" fill="#2E8556" filter="url(#shadow)"/>
   <text x="95" y="435" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Question</text>
 
-  <!-- Guardrail entrée -->
+  <!-- Input guardrail -->
   <rect x="165" y="395" width="140" height="70" rx="12" fill="#FDECEC" stroke="#D9534F" stroke-width="2" filter="url(#shadow)"/>
-  <text x="235" y="424" text-anchor="middle" class="t" font-size="14">Guardrail entrée</text>
-  <text x="235" y="444" text-anchor="middle" class="s">injection · fuite clients</text>
+  <text x="235" y="424" text-anchor="middle" class="t" font-size="14">Input guardrail</text>
+  <text x="235" y="444" text-anchor="middle" class="s">injection · data leakage</text>
 
-  <!-- Agent LangGraph (carré) -->
+  <!-- LangGraph agent (box) -->
   <rect x="335" y="330" width="430" height="222" rx="16" fill="#FFF6E5" stroke="#E0A030" stroke-width="2.5" filter="url(#shadow)"/>
-  <text x="355" y="356" font-size="15" font-weight="700" fill="#B5791A">Agent LangGraph</text>
+  <text x="355" y="356" font-size="15" font-weight="700" fill="#B5791A">LangGraph agent</text>
 
   <rect x="355" y="402" width="120" height="56" rx="10" fill="#FFFFFF" stroke="#E0A030" stroke-width="2"/>
   <text x="415" y="426" text-anchor="middle" class="t" font-size="14">Planner</text>
-  <text x="415" y="444" text-anchor="middle" class="s">sous-requêtes</text>
+  <text x="415" y="444" text-anchor="middle" class="s">sub-queries</text>
 
   <rect x="505" y="365" width="120" height="38" rx="19" fill="#FFFFFF" stroke="#E0A030" stroke-width="2"/>
   <rect x="505" y="412" width="120" height="38" rx="19" fill="#FFFFFF" stroke="#E0A030" stroke-width="2"/>
   <rect x="505" y="459" width="120" height="38" rx="19" fill="#FFFFFF" stroke="#E0A030" stroke-width="2"/>
   <text x="565" y="389" text-anchor="middle" font-size="13" font-weight="600" fill="#1F2430">Hybrid · RRF</text>
-  <text x="565" y="436" text-anchor="middle" font-size="13" font-weight="600" fill="#1F2430">Filtre structuré</text>
-  <text x="565" y="483" text-anchor="middle" font-size="13" font-weight="600" fill="#1F2430">Agrégation</text>
+  <text x="565" y="436" text-anchor="middle" font-size="13" font-weight="600" fill="#1F2430">Structured filter</text>
+  <text x="565" y="483" text-anchor="middle" font-size="13" font-weight="600" fill="#1F2430">Aggregation</text>
 
   <polygon points="700,395 745,430 700,465 655,430" fill="#FFFFFF" stroke="#E0A030" stroke-width="2"/>
-  <text x="700" y="427" text-anchor="middle" font-size="11" font-weight="700" fill="#1F2430">Contexte</text>
-  <text x="700" y="440" text-anchor="middle" font-size="11" font-weight="700" fill="#1F2430">suffisant ?</text>
+  <text x="700" y="427" text-anchor="middle" font-size="11" font-weight="700" fill="#1F2430">Enough</text>
+  <text x="700" y="440" text-anchor="middle" font-size="11" font-weight="700" fill="#1F2430">context?</text>
 
   <path class="flow" d="M475,430 L501,386"/>
   <path class="flow" d="M475,430 L501,431"/>
@@ -102,17 +102,17 @@
   <path class="flow" d="M625,431 L651,431"/>
   <path class="flow" d="M625,478 L652,435"/>
   <path class="flow" d="M700,465 L700,524 L415,524 L415,462" stroke="#B5791A"/>
-  <text x="557" y="542" text-anchor="middle" class="lbl">non → re-planifier</text>
+  <text x="557" y="542" text-anchor="middle" class="lbl">no → re-plan</text>
 
-  <!-- Index → outil hybrid -->
+  <!-- Index → hybrid tool -->
   <path class="flow" d="M990,232 L990,272 L565,272 L565,361" stroke-dasharray="6 5"/>
-  <text x="780" y="266" text-anchor="middle" class="lbl">recherche dense + sparse</text>
+  <text x="780" y="266" text-anchor="middle" class="lbl">dense + sparse search</text>
 
-  <!-- Suite du pipeline -->
+  <!-- Rest of the pipeline -->
   <path class="flow" d="M139,430 L161,430"/>
   <path class="flow" d="M305,430 L351,430"/>
   <path class="flow" d="M745,430 L791,430"/>
-  <text x="768" y="420" text-anchor="middle" class="lbl">oui</text>
+  <text x="768" y="420" text-anchor="middle" class="lbl">yes</text>
 
   <g filter="url(#shadow)">
     <rect x="795" y="395" width="135" height="70" rx="12" fill="#FFFFFF" stroke="#2E8556" stroke-width="2"/>
@@ -121,31 +121,31 @@
   </g>
   <text x="862" y="424" text-anchor="middle" class="t" font-size="14">Reranker</text>
   <text x="862" y="444" text-anchor="middle" class="s">cross-encoder</text>
-  <text x="1022" y="424" text-anchor="middle" class="t" font-size="14">Guardrail sortie</text>
+  <text x="1022" y="424" text-anchor="middle" class="t" font-size="14">Output guardrail</text>
   <text x="1022" y="444" text-anchor="middle" class="s">groundedness</text>
-  <text x="1180" y="424" text-anchor="middle" class="t" font-size="14">Génération</text>
-  <text x="1180" y="444" text-anchor="middle" class="s">Claude · réponse citée</text>
+  <text x="1180" y="424" text-anchor="middle" class="t" font-size="14">Generation</text>
+  <text x="1180" y="444" text-anchor="middle" class="s">Claude · cited answer</text>
 
   <path class="flow" d="M930,430 L951,430"/>
   <path class="flow" d="M1090,430 L1111,430"/>
   <path class="flow" d="M1245,430 L1264,430"/>
 
-  <!-- Réponse (cercle) -->
+  <!-- Answer (circle) -->
   <circle cx="1310" cy="430" r="44" fill="#2E8556" filter="url(#shadow)"/>
-  <text x="1310" y="435" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Réponse</text>
+  <text x="1310" y="435" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Answer</text>
 
-  <!-- ============ LANE 3 : OBSERVABILITÉ ET ÉVAL ============ -->
+  <!-- ============ LANE 3: OBSERVABILITY AND EVALUATION ============ -->
   <rect x="30" y="600" width="1340" height="200" rx="16" fill="#F5F1FC" stroke="#BBA7EA" stroke-width="1.5"/>
-  <text x="1346" y="628" text-anchor="end" class="lane" fill="#6A4FB8">③ OBSERVABILITÉ ET ÉVALUATION · transversal</text>
+  <text x="1346" y="628" text-anchor="end" class="lane" fill="#6A4FB8">③ OBSERVABILITY AND EVALUATION · cross-cutting</text>
 
   <rect x="60" y="650" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#7B5BC9" stroke-width="2" filter="url(#shadow)"/>
   <text x="250" y="684" text-anchor="middle" class="t">Langfuse</text>
-  <text x="250" y="706" text-anchor="middle" class="s">trace chaque étape : retrieval, hops de l'agent,</text>
-  <text x="250" y="724" text-anchor="middle" class="s">rerank, génération</text>
-  <text x="250" y="744" text-anchor="middle" class="s">self-host via docker-compose</text>
+  <text x="250" y="706" text-anchor="middle" class="s">traces every stage: retrieval, agent hops,</text>
+  <text x="250" y="724" text-anchor="middle" class="s">rerank, generation</text>
+  <text x="250" y="744" text-anchor="middle" class="s">self-hosted via docker-compose</text>
 
   <rect x="480" y="650" width="600" height="110" rx="14" fill="#FFFFFF" stroke="#7B5BC9" stroke-width="2" filter="url(#shadow)"/>
-  <text x="780" y="680" text-anchor="middle" class="t">Couche d'évaluation · enveloppe tout le pipeline</text>
+  <text x="780" y="680" text-anchor="middle" class="t">Evaluation layer · wraps the whole pipeline</text>
   <g font-size="13" font-weight="600" fill="#4A3590" text-anchor="middle">
     <rect x="495" y="700" width="135" height="40" rx="20" fill="#EFE9FB"/>
     <rect x="640" y="700" width="135" height="40" rx="20" fill="#EFE9FB"/>
@@ -157,31 +157,31 @@
     <text x="997" y="725">Red team</text>
   </g>
 
-  <!-- Rapport (cercle) -->
+  <!-- Report (circle) -->
   <circle cx="1230" cy="705" r="60" fill="#6A4FB8" filter="url(#shadow)"/>
-  <text x="1230" y="698" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Rapport</text>
-  <text x="1230" y="716" text-anchor="middle" font-size="12" fill="#EDE7FB">avant / après</text>
-  <text x="1230" y="732" text-anchor="middle" font-size="12" fill="#EDE7FB">chiffré</text>
+  <text x="1230" y="698" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Report</text>
+  <text x="1230" y="716" text-anchor="middle" font-size="12" fill="#EDE7FB">quantified</text>
+  <text x="1230" y="732" text-anchor="middle" font-size="12" fill="#EDE7FB">before / after</text>
   <path class="flow" d="M1080,705 L1166,705"/>
 
   <path class="soft" d="M250,650 L250,576"/>
   <text x="262" y="630" class="lbl">traces</text>
   <path class="soft" d="M780,650 L780,576"/>
-  <text x="792" y="630" class="lbl">fait tourner chaque variante</text>
+  <text x="792" y="630" class="lbl">runs every variant</text>
 
-  <!-- ============ LÉGENDE ============ -->
+  <!-- ============ LEGEND ============ -->
   <g font-size="12" fill="#4F5666">
     <rect x="60" y="830" width="14" height="14" rx="3" fill="#DCE7FB" stroke="#4C78C8"/>
-    <text x="82" y="842">Local et gratuit</text>
+    <text x="82" y="842">Local and free</text>
     <rect x="210" y="830" width="14" height="14" rx="3" fill="#FFF6E5" stroke="#E0A030"/>
     <text x="232" y="842">Agent (LangGraph)</text>
     <rect x="375" y="830" width="14" height="14" rx="3" fill="#FDECEC" stroke="#D9534F"/>
-    <text x="397" y="842">Sécurité (guardrails custom)</text>
+    <text x="397" y="842">Security (custom guardrails)</text>
     <rect x="580" y="830" width="14" height="14" rx="3" fill="#EFE9FB" stroke="#7B5BC9"/>
-    <text x="602" y="842">Cloud / éval / observabilité</text>
+    <text x="602" y="842">Cloud / eval / observability</text>
     <line x1="790" y1="837" x2="830" y2="837" stroke="#4A4F5C" stroke-width="2" stroke-dasharray="6 5"/>
-    <text x="840" y="842">accès aux index</text>
+    <text x="840" y="842">index access</text>
     <line x1="960" y1="837" x2="1000" y2="837" stroke="#8A7BB8" stroke-width="2" stroke-dasharray="6 5"/>
-    <text x="1010" y="842">relation transversale</text>
+    <text x="1010" y="842">cross-cutting link</text>
   </g>
 </svg>

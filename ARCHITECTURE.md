@@ -1,6 +1,6 @@
 # Architecture
 
-Status: locked for pre-development. Revisit only if implementation reveals a wrong assumption below — update this file when that happens, don't let it drift out of sync with the code.
+Status: decisions locked; implementation in progress (Phases 0-3 done, Phase 4 next, see DevRoadmap.md). Sections §4b and §4c were added during implementation. Revisit only if implementation reveals a wrong assumption below — update this file when that happens, don't let it drift out of sync with the code.
 
 ## 1. Goals recap
 
@@ -94,7 +94,7 @@ Chunking, embedding model, and reranker model are **all** decided this way, not 
 - [eval/reports/embedding_benchmark.md](eval/reports/embedding_benchmark.md) — candidates in the decision table (§2).
 - [eval/reports/reranker_benchmark.md](eval/reports/reranker_benchmark.md) — candidates in the decision table (§2), including the no-reranker baseline.
 
-These are placeholder files for now (pre-development) — they get filled in once the golden dataset and indices exist to actually run the comparisons. Don't skip straight to "pick the obvious-looking option" during implementation; the placeholder existing is a reminder to run the benchmark first.
+These are placeholder files until each benchmark actually runs (the chunking report already holds the Phase 2 implementation notes) — they get filled in once the golden dataset and indices exist to actually run the comparisons. Don't skip straight to "pick the obvious-looking option" during implementation; the placeholder existing is a reminder to run the benchmark first.
 
 ## 4b. Time and data freshness: evaluation vs. the real product
 
@@ -108,6 +108,21 @@ Design rules that follow from this:
 1. **No hidden clock.** No pipeline component calls `datetime.now()` / `date.today()` directly. The current date is an explicit `as_of` input: the fixed reference date in evaluation, the real date in production. This applies to the corpus generator (Phase 1) and to the agent (Phase 7) — time-relative questions ("which invoices are overdue?") are resolved against `as_of`, never against a date frozen into the code.
 2. **Time-dependent facts are derived at query time where possible.** A stored status like `overdue` is only true as of the moment it was written. In production it should be computed from `due_date`, `payment_date` and `as_of` (e.g. by the aggregation/filter tools), not trusted from the indexed chunk text, which goes stale as soon as the date moves. In the synthetic corpus the stored status is consistent with the reference date, so evaluation is unaffected.
 3. **Indexes must be updatable, not only rebuildable.** Chunks keep their source record ID(s) as stable IDs, so a new or changed record can be upserted into Chroma without a full rebuild. `rank_bm25` has no incremental update, so for BM25 "update" means a rebuild from the chunk store — cheap at this corpus size. Full ERP sync is a product concern beyond the portfolio's core scope; Phase 14 demonstrates it with a simulated "live" mode, kept separate from the frozen evaluation corpus.
+
+## 4c. Natural-language references and the clarify-first rule
+
+Users mostly don't type IDs. They say "Warner sticky notes" (brand only partly given), "Lee" (a surname shared by two customers), or "the $12,636.26 invoice", and the assistant has to work out which records they mean. Two requirements follow, and the golden dataset tests both:
+
+1. **Entity resolution.** The agent maps partial, natural references (name fragments, partial brand names, amounts, "latest order") to concrete record IDs before answering. IDs still work when the user gives them.
+2. **Clarify first when the question is ambiguous or unclear.** When a reference matches several records (8 products are called "Aluminum Rod") or the request is too vague to answer precisely, the assistant does **not** retrieve and report on every match. It replies with:
+   - a short **explanation** of why it can't answer yet ("I found 8 different products called Aluminum Rod, each from a different brand..."), then
+   - a **clarifying question** offering a **few example options** (at most 3, e.g. "Which brand is it? For example, Hancock and Sons or Bryant Group."), never the full list unless the user explicitly asks for it.
+
+   Only after the user's reply does it retrieve the detailed records and answer. **Why:** asking first keeps the retrieved context small and focused (2 candidate customers instead of 18 invoice/order chunks for "Lee"), avoids guessing, and matches how a person would handle the same question.
+
+**In the golden dataset:** ambiguous entries carry `"ambiguous": true`. Their `expected_answer` is the explanation plus the clarifying question, and `expected_source_ids` holds only the candidate records needed to notice the ambiguity. A second turn records the user's reply (`follow_up`), the final answer (`follow_up_answer`) and the records it needs (`follow_up_source_ids`). These three fields are `null` on every other entry.
+
+**When it's built:** the golden dataset specifies the behavior now (Phase 3). The agent implements it in Phase 7 (ambiguity detection plus a LangGraph interrupt that pauses for the user's reply), and the eval harness grades both turns in Phase 9.
 
 ## 5. Project structure
 
@@ -148,7 +163,7 @@ assistant-rag-erp-simule/
 
 ## 6. Open items to resolve during implementation
 
-- Exact golden dataset size and query-type taxonomy (lookup / filter / aggregation / multi-hop) — draft this before building the agent, not after, so the agent's tool set is designed to answer real eval questions.
+- ~~Exact golden dataset size and query-type taxonomy~~ **Settled for the seed set (Phase 3):** 20 entries, an equal 5 per type (lookup / filter / aggregation / multi-hop), plus an `ambiguous` flag for clarify-first entries (§4c). The full size (75-150) is set in Phase 9.
 - Whether the BM25 index is rebuilt per chunking-strategy comparison or only for the final chosen strategy (rebuilding for all keeps the ablation fair; decide once corpus size is known).
 - Langfuse self-host (docker-compose) vs. free cloud tier — self-host is more reproducible for reviewers, cloud tier is faster to set up. Default to self-host unless it proves to be friction during setup.
 - How the "live" mode refreshes the indexes (§4b): what triggers it (on-demand API endpoint vs. schedule) and how new/changed records are simulated. Decide in Phase 14.

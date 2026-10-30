@@ -1,8 +1,8 @@
-# Overview: architecture and pre-development
+# Overview: architecture and progress
 
 > Summary of `ARCHITECTURE.md` and `DevRoadmap.md`.
 > The original files remain the source of truth. This summary is updated when they change.
-> Last synced: 2026-10-26.
+> Last synced: 2026-10-30. **Progress:** Phases 0-3 done, Phase 4 (indexing, hybrid retrieval, chunking benchmark) next.
 
 ---
 
@@ -123,6 +123,10 @@ Rules that follow:
 2. **Time-dependent facts derived at query time** (e.g. overdue = unpaid and `due_date < as_of`), not trusted from a stored status that goes stale.
 3. **Updatable indexes**: chunks keep their record IDs as stable IDs, so a changed record can be upserted in Chroma; BM25 is rebuilt (cheap at this size). Demonstrated by a "live mode" in Phase 14.
 
+### Natural-language references and the clarify-first rule
+
+Users rarely type IDs: they say "Warner sticky notes" or "Lee". The agent resolves these to records. When a question is ambiguous (8 products called "Aluminum Rod", 2 customers named Lee), it **asks before retrieving**: a short explanation, then a clarifying question with at most 3 example options (never the full list unless asked). Only after the user's reply does it fetch details and answer. This keeps retrieved context small. In the golden dataset, such entries are flagged `ambiguous` and carry a second turn (`follow_up`, `follow_up_answer`). Specified now (Phase 3), built in Phase 7, graded in Phase 9.
+
 ---
 
 ## 7. Project structure
@@ -151,7 +155,7 @@ assistant-rag-erp-simule/
 
 ## 8. Open items (to settle during development)
 
-- Golden dataset size and query taxonomy (lookup / filter / aggregation / multi-hop). **To be drafted before building the agent.**
+- ~~Golden dataset size and query taxonomy~~ **Settled for the seed set:** 20 questions, an equal 5 per type (lookup / filter / aggregation / multi-hop), 2 of them ambiguous. Full size (75-150) set in Phase 9.
 - BM25 rebuilt for every chunking strategy, or only for the chosen one? Decide based on corpus size.
 - Langfuse self-hosted or free cloud tier? Self-hosted by default, unless setup proves too painful.
 - Live mode: what triggers the index refresh (API endpoint vs. schedule) and how new/changed records are simulated. Decide in Phase 14.
@@ -162,14 +166,14 @@ assistant-rag-erp-simule/
 
 | Phase | Content | Tests added | CI/CD evolution |
 |-------|---------|-------------|-----------------|
-| 0 | Environment, Git, **CI kata** | None | **Basic CI: ruff lint + format check** |
-| 1 | Synthetic Faker corpus, fixed reference date | Unit (seed, clock independence, schema, references) | **+ pytest** |
-| 2 | 3 chunking strategies | Unit | Unchanged |
-| 3 | Seed golden dataset (15-25 questions) | Data validation | + dataset schema check |
+| 0 ✅ | Environment, Git, **CI kata** | None | **Basic CI: ruff lint + format check** |
+| 1 ✅ | Synthetic Faker corpus, fixed reference date, consistent order lifecycle | Unit (seed, clock independence, schema, references, lifecycle) | **+ pytest** |
+| 2 ✅ | 3 chunking strategies, selectable by name; corpus loader | Unit | Unchanged |
+| 3 ✅ | Seed golden dataset (20 questions, clarify-first entries) | Data validation + truth tests | + dataset schema check |
 | 4 | Indexing, hybrid retrieval, chunking benchmark | **First integration test** | Real test suite |
 | 5 | Embedding benchmark | Integration extended | Unchanged |
 | 6 | Reranker benchmark | Unit + integration | Unchanged |
-| 7 | LangGraph agent, `as_of` date as input | Integration with mocked LLM | Tests without an API key |
+| 7 | LangGraph agent, `as_of` date as input, entity resolution + clarify-first | Integration with mocked LLM | Tests without an API key |
 | 8 | Generation + guardrails | Unit + integration | **First secret** `ANTHROPIC_API_KEY`, separate jobs |
 | 9 | Full golden dataset (75-150) + RAGAS + LLM-judge | Eval harness smoke test | Prepares the eval gate |
 | 10 | Red teaming | The adversarial set itself | Feeds the eval gate |

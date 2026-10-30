@@ -118,16 +118,16 @@ A step-by-step path from pre-development to a deployed, quantified RAG demo. Thi
 
 ## Phase 3 — Draft golden dataset (seed set)
 
-**Status:** 🟡 In progress (2026-10-26). 20-question draft written, awaiting the project owner's review.
+**Status:** ✅ Done (2026-10-30). 20 questions approved by the project owner, truth-tested, clarify-first rule applied to the 2 ambiguous entries.
 
 **Goal:** A small (15–25 example) golden dataset early enough to make every later benchmark actually runnable — expanded to full size in Phase 9.
 
 **Tasks:**
-- [ ] `eval/golden_dataset/qa_pairs.jsonl` — each entry: question, expected answer (or expected fact), expected source record(s), and a **query-type tag**: `lookup` / `filter` / `aggregation` / `multi-hop`. *(Draft: 20 entries, 5 per type. Process chosen: Claude Code drafts questions, every expected answer and source id is computed from `data/raw/` by code rather than written from memory, and the project owner reviews, edits or replaces each entry. Time-relative answers ("overdue", "currently") are as of `CORPUS_REFERENCE_DATE`.)*
-- [x] Cover all four query types even in this seed set, in rough proportion to what real usage would look like (per CLAUDE.md: this shapes the agent's tool design later, so don't skip a type because it's harder to write).
+- [x] `eval/golden_dataset/qa_pairs.jsonl` — each entry: question, expected answer (or expected fact), expected source record(s), and a **query-type tag**: `lookup` / `filter` / `aggregation` / `multi-hop`. *(Draft: 20 entries. Process chosen: Claude Code drafts questions, every expected answer and source id is computed from `data/raw/` by code rather than written from memory, and the project owner reviews, edits or replaces each entry. Phrased the way users actually ask: mostly natural language with partial names ("Warner sticky notes"), IDs only sometimes. 2 entries are `"ambiguous": true` and follow the clarify-first rule, with a second turn (`follow_up`, `follow_up_answer`, `follow_up_source_ids`); see ARCHITECTURE.md §4c. Time-relative answers ("overdue", "running low") are as of `CORPUS_REFERENCE_DATE`.)*
+- [x] Cover all four query types even in this seed set. *(Decision: an equal 5 per type rather than proportional to real usage, so no type is under-weighted and per-type scores rest on the same number of questions.)*
 - [x] Prerequisite found while drafting: make order/invoice statuses consistent first (see Phase 1, "Consistent order lifecycle") — a golden answer can't be written for contradictory data.
 
-**Tests to add:** None (this is data, not code) — but add a schema check: every entry has all required fields, every referenced source record actually exists in the Phase 1 corpus. *(Done: `tests/eval/test_golden_dataset.py` — required fields, non-empty values, unique ids, valid query types with all four covered, every source id exists in the corpus.)*
+**Tests to add:** None (this is data, not code) — but add a schema check: every entry has all required fields, every referenced source record actually exists in the Phase 1 corpus. *(Done: `tests/eval/test_golden_dataset.py` — required fields, non-empty values, unique ids, valid query types with all four covered, second turn filled exactly for ambiguous entries, every source id exists in the corpus. Added beyond the plan: `tests/eval/test_golden_answers.py` — **truth tests** that recompute every expected answer, source list and follow-up from the corpus, plus the clarify-first checks (only ambiguous entries ask a question; at most 3 example options). Verified by planting wrong answers: all caught.)*
 
 **CI/CD touchpoint:** The schema check above runs in CI as a data-validation test — a category distinct from both unit and integration tests, worth naming as such.
 
@@ -209,11 +209,13 @@ A step-by-step path from pre-development to a deployed, quantified RAG demo. Thi
 - `src/erp_rag/agent/graph.py` — the LangGraph state machine; `nodes.py` — individual node logic (planner, retriever call, sufficiency checker); `tools.py` — the tools the planner can invoke (hybrid retrieve, structured metadata filter, aggregate).
 - Design the tool set by walking through the Phase 3 golden dataset questions one by one — each query type should map cleanly to a tool or tool combination.
 - **Time is an input, not a hidden clock:** the graph's input state carries an explicit `as_of` date, and every time-relative question ("which invoices are overdue?", "orders from last month") is resolved against it. Evaluation passes `CORPUS_REFERENCE_DATE`; the product passes the real current date. Where possible, the filter/aggregation tools derive time-dependent facts (e.g. overdue = unpaid and `due_date < as_of`) instead of trusting a status stored in the chunk text, which goes stale in a live system. See ARCHITECTURE.md §4b.
+- **Entity resolution and clarify-first** (ARCHITECTURE.md §4c): resolve natural references ("Warner sticky notes", "Lee", "the $12,636.26 invoice") to record IDs before retrieving details. When several records match or the request is unclear, reply with a short explanation plus a clarifying question offering at most 3 example options, pause the graph for the user's reply (a LangGraph interrupt), and only then retrieve and answer. The golden entries q004 and q013 are the target behavior.
 
 **Tests to add (integration, with mocked LLM calls):**
 - Given a mocked planner response (no real LLM call — deterministic, fast, free), assert the graph routes to the correct tool.
 - Given a mocked "insufficient context" signal, assert the graph re-plans rather than answering prematurely — this is the behavior that most easily breaks silently, worth its own explicit test.
 - Given the same question ("which invoices are overdue?") and two different `as_of` dates, assert the tools return different invoice sets — proof that time flows in as an input rather than being baked into the code or the index.
+- Given an ambiguous question (several records match), assert the graph pauses with a clarifying question *before* retrieving the detailed records, and that resuming with the user's reply produces the final answer. Given an unambiguous one, assert it never pauses.
 
 **CI/CD touchpoint:** These tests must run without hitting the real Claude API (mocked) so CI stays fast and free — a good moment to introduce the unit/integration-vs-eval distinction concretely: these are integration tests (control flow correctness), not eval tests (answer quality), and they should never need an API key.
 
@@ -251,7 +253,8 @@ A step-by-step path from pre-development to a deployed, quantified RAG demo. Thi
 **Goal:** Expand the Phase 3 seed set to full size, and build the automated eval harness that turns it into numbers.
 
 **Tasks:**
-- Expand `qa_pairs.jsonl` to a size that gives statistically meaningful before/after comparisons (aim for 75–150, proportioned across query types).
+- Expand `qa_pairs.jsonl` to a size that gives statistically meaningful before/after comparisons (aim for 75–150, split equally across query types, as in the seed set), keeping the truth tests (`tests/eval/test_golden_answers.py`) covering every new entry.
+- **Grade ambiguous entries as two turns** (ARCHITECTURE.md §4c): turn 1 is judged on whether it asks a clarifying question with a few valid options instead of answering or dumping every match; turn 2 (`follow_up` → `follow_up_answer`) is judged like a normal answer. Report clarify-first results as their own line in the metrics report.
 - `eval/metrics/ragas_eval.py` — faithfulness, answer relevancy, context precision/recall.
 - `eval/metrics/llm_judge.py` — a separate Claude prompt with its own rubric (not the generator prompt reused) grading correctness against the actual expected answer.
 - `scripts/run_eval.py` — runs the full pipeline against the golden dataset, produces a report. It always passes `as_of=CORPUS_REFERENCE_DATE`, so an eval run next month answers time-relative questions exactly like one today.

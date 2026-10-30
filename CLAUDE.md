@@ -48,6 +48,8 @@ See ARCHITECTURE.md §5 for the full layout. Key paths:
 
 ## Current status
 
-Phases 0 (environment, CI), 1 (synthetic corpus) and 2 (chunking: three strategies selectable by name, `loaders.py`) are complete; next is Phase 3 (seed golden dataset). Progress is tracked with Status lines and checkboxes in DevRoadmap.md; open chunking findings are in `eval/reports/chunking_benchmark.md`. Check git log / project structure for what's actually been built before trusting this note, which can go stale.
+Phases 0 (environment, CI), 1 (synthetic corpus), 2 (chunking: three strategies selectable by name, `loaders.py`) and 3 (seed golden dataset: 20 approved, truth-tested questions in `eval/golden_dataset/qa_pairs.jsonl`) are complete. Next is Phase 4 (indexing, hybrid retrieval, chunking benchmark). Progress is tracked with Status lines and checkboxes in DevRoadmap.md; open chunking findings are in `eval/reports/chunking_benchmark.md`.
+
+Golden answers follow the **clarify-first rule** (ARCHITECTURE.md §4c): an ambiguous question gets a short explanation plus a clarifying question with at most 3 example options, then a second turn. Every golden entry must have a verifier in `tests/eval/test_golden_answers.py` that recomputes its answer from the corpus; don't hand-write an expected answer without one. Check git log / project structure for what's actually been built before trusting this note, which can go stale.
 
 The corpus is deterministic by seed **and** by date: generators take an `as_of` date defaulting to `CORPUS_REFERENCE_DATE` and must never read the real clock (ARCHITECTURE.md §4b). Don't reintroduce `datetime.now()`, `date.today()` or Faker's `"today"` anywhere in the pipeline.
