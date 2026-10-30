@@ -1,6 +1,7 @@
 """Generate synthetic order records for the ERP corpus."""
 
-from datetime import date, timedelta
+from calendar import timegm
+from datetime import UTC, date, datetime, timedelta
 
 from faker import Faker
 
@@ -32,7 +33,7 @@ def generate_orders(
     orders = []
     for i in range(1, count + 1):
         customer = fake.random_element(elements=customers)
-        order_date = fake.date_between(start_date=history_start, end_date=as_of)
+        order_date = _random_date(fake, history_start, as_of)
         cancelled = fake.boolean(chance_of_getting_true=CANCELLED_PROBABILITY)
         order = Order(
             id=f"ORD-{i:04d}",
@@ -43,6 +44,18 @@ def generate_orders(
         orders.append(order)
 
     return orders
+
+
+def _random_date(fake: Faker, start: date, end: date) -> date:
+    """Random date in [start, end], identical on every OS and timezone.
+
+    Faker's own date_between() is not portable: it draws with randint on Windows but
+    uniform elsewhere (a different random sequence for the same seed), and converts
+    back through the machine's local timezone. This draws whole seconds like the
+    Windows path, so the committed snapshot is unchanged, and converts in UTC.
+    """
+    seconds = fake.random_int(min=timegm(start.timetuple()), max=timegm(end.timetuple()))
+    return datetime.fromtimestamp(seconds, UTC).date()
 
 
 def _status_by_age(order_date: date, as_of: date) -> OrderStatus:

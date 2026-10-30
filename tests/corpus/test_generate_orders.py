@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 import pytest
+from faker.providers.date_time import Provider as FakerDateTimeProvider
 
 from erp_rag.corpus.generate_customers import generate_customers
 from erp_rag.corpus.generate_orders import (
@@ -57,6 +58,22 @@ def test_generate_orders_dates_fall_in_the_year_before_as_of(sample_customers, a
     history_start = as_of - timedelta(days=ORDER_HISTORY_DAYS)
 
     assert all(history_start <= order.order_date <= as_of for order in orders)
+
+
+def test_generate_orders_is_identical_on_every_operating_system(sample_customers, monkeypatch):
+    """Faker's date_between() draws random seconds with randint on Windows but
+    uniform on Linux, so the same seed gave different dates on the CI runner.
+    Forcing Faker's other platform path must not change our orders."""
+    first_run = generate_orders(sample_customers, count=50, seed=1)
+
+    monkeypatch.setattr(
+        FakerDateTimeProvider,
+        "_rand_seconds",
+        lambda self, start, end: self.generator.random.uniform(start, end),
+    )
+    second_run = generate_orders(sample_customers, count=50, seed=1)
+
+    assert first_run == second_run
 
 
 def test_generate_orders_status_follows_order_age(sample_customers):
